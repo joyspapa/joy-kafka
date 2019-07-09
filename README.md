@@ -4,4 +4,4 @@
 ## License  
 
 
-Apache 2.0 License - see the [[LICENSE.TXT]](./LICENSE.TXT) file
+Apache 2.0 License - see the [[LICENSE]](./LICENSE) file
