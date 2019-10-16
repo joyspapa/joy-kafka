@@ -1,19 +1,25 @@
 package com.joy.kafka.util;
 
-import com.joy.kafka.monitor.consumer.ConsumerMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.joy.kafka.monitor.handler.ConsumerMonitorHandler;
 
 public class BeautifulPrint {
-
+	private static final Logger logger = LoggerFactory.getLogger(BeautifulPrint.class);
+	
 	public static void main(String[] args) {
-		System.out.format("%-25s %9.7f%n", "K and Burstner", 0.055170);
 		BeautifulPrint print = new BeautifulPrint();
 		//print.print1();
 		//print.print2();
-		print.print3();
+		//print.print4();
+		print.print5();
 	}
 
 	// https://stackoverflow.com/questions/29052615/nice-looking-table-with-stringbuilder
 	private void print1() {
+		System.out.format("%-25s %9.7f%n", "K and Burstner", 0.055170);
+		
 		StringBuilder s = new StringBuilder();
 
 	    s.append(String.format("%-50s%-10s%-18s%-18s%-18s%-8s%-10s\n","TOPIC","PARTITION","CURRENT-OFFSET","END-OFFSET","LAG","leader","replicas"));
@@ -30,7 +36,25 @@ public class BeautifulPrint {
 	}
 	
 	private void print3() {
-		ConsumerMonitor monitor = new ConsumerMonitor();
-		monitor.getConsumersByAdminClient("192.168.10.82:9092");
+		ConsumerMonitorHandler monitor = new ConsumerMonitorHandler("192.168.10.82:9092");
+		monitor.getConsumerList();
+	}
+	/*
+	 * https://stackoverflow.com/questions/15215326/how-can-i-create-table-using-ascii-in-a-console
+	 */
+	private void print4() {
+		String leftAlignFormat = "| %-15s | %-4d |%n";
+
+		System.out.format("+-----------------+------+%n");
+		System.out.format("| Column name     | ID   |%n");
+		System.out.format("+-----------------+------+%n");
+		for (int i = 0; i < 5; i++) {
+		    System.out.format(leftAlignFormat, "some data" + i, i * i);
+		}
+		System.out.format("+-----------------+------+%n");
+	}
+	
+	private void print5() {
+		//System.out.println(ShowTable.head());
 	}
 }

@@ -1,4 +1,4 @@
-package com.joy.kafka.monitor.offsetviewer.old;
+package com.joy.kafka.simple.offsetviewer.old;
 
 import java.util.List;
 
@@ -6,8 +6,8 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.joy.kafka.monitor.offsetviewer.old.vo.OffsetPerPartitonVO;
-import com.joy.kafka.monitor.offsetviewer.old.vo.OffsetPerTopicVO;
+import com.joy.kafka.simple.offsetviewer.old.vo.OffsetPerPartitonVO;
+import com.joy.kafka.simple.offsetviewer.old.vo.OffsetPerTopicVO;
 
 /**
  * https://github.com/rusonding/kafka-monitor

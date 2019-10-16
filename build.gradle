@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'eclipse'
+    id 'idea'
     id 'application'
     id "com.github.johnrengelman.shadow" version "5.1.0"
 }
@@ -27,12 +28,35 @@ allprojects {
 		jcenter()
 	}
 
+    mainClassName = 'com.joy.kafka.monitor.consumer.KafkaAdminClientFactoryTest'
+    
+    jar {
+        exclude("config.properties")
+        exclude("logback.xml")
+        manifest {
+            attributes 'Main-Class': mainClassName
+        }
+        archivesBaseName = 'obzen-synapse'
+    }
+    
     shadowJar {
         mainClassName = 'com.joy.kafka.Main'
-        exclude("rest.properties")
+        exclude("logback.xml")
         exclude("log4j.properties")
         zip64 true
         archiveName = "joy-kafka-${version}.jar"
+    }
+    
+    if (JavaVersion.current().isJava8Compatible()) {
+        tasks.withType(Javadoc) {
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
+
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xdiags:verbose"
+        }
     }
 }
 
@@ -79,6 +103,6 @@ dependencies {
 //SLF4J: Found binding in [slf4j-log4j12-1.6.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
 //SLF4J: Found binding in [logback-classic-1.1.3.jar!/org/slf4j/impl/StaticLoggerBinder.class]
 configurations {
-    all*.exclude group: "log4j", module: "log4j"
+    //all*.exclude group: "log4j", module: "log4j"
 	all*.exclude group: "org.slf4j", module: "slf4j-log4j12"
 }

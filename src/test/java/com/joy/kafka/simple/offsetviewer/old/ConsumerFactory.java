@@ -1,4 +1,4 @@
-package com.joy.kafka.monitor.offsetviewer.old;
+package com.joy.kafka.simple.offsetviewer.old;
 
 import java.util.Properties;
 

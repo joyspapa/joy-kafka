@@ -1,4 +1,4 @@
-package com.joy.kafka.monitor.offsetviewer;
+package com.joy.kafka.simple.offsetviewer;
 
 import java.util.List;
 
@@ -6,8 +6,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.joy.kafka.monitor.offsetviewer.old.ConsumerGroupOffset;
-import com.joy.kafka.monitor.offsetviewer.old.vo.OffsetPerTopicVO;
+import com.joy.kafka.simple.offsetviewer.old.ConsumerGroupOffset;
+import com.joy.kafka.simple.offsetviewer.old.vo.OffsetPerTopicVO;
 
 public class GetOffsetInfoTest {
 	private static final Logger logger = LoggerFactory.getLogger(GetOffsetInfoTest.class);
@@ -35,13 +35,13 @@ public class GetOffsetInfoTest {
 			ConsumerGroupOffset info = new ConsumerGroupOffset();
 			List<OffsetPerTopicVO> resultList = info.getConsumerOffsetInfoNew(brokers, offsetPerTopicVO);
 
-//			for(OffsetPerTopicVO re : resultList) {
-//				logger.debug("topic : " + re.getTopic());
-//				logger.debug("Lag : " + re.getLag());
-//				logger.debug("LogSize : " + re.getLogSize());
-//				logger.debug("Offsets : " + re.getOffsets());
-//				logger.debug("PartitionSize : " + re.getPartitionSize());
-//			}
+			for(OffsetPerTopicVO re : resultList) {
+				logger.debug("topic : " + re.getTopic());
+				logger.debug("Lag : " + re.getLag());
+				logger.debug("LogSize : " + re.getLogSize());
+				logger.debug("Offsets : " + re.getOffsets());
+				logger.debug("PartitionSize : " + re.getPartitionSize());
+			}
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();

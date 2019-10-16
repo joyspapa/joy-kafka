@@ -1,4 +1,4 @@
-package com.joy.kafka.producer;
+package com.joy.kafka.simple.producer;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

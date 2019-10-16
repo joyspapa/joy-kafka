@@ -1,4 +1,4 @@
-package com.joy.kafka.monitor.offsetviewer.old.vo;
+package com.joy.kafka.simple.offsetviewer.old.vo;
 
 import java.util.ArrayList;
 import java.util.List;

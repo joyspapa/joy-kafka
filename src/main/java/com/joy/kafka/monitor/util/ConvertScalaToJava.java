@@ -1,4 +1,4 @@
-package com.joy.kafka.util;
+package com.joy.kafka.monitor.util;
 
 public class ConvertScalaToJava {
 

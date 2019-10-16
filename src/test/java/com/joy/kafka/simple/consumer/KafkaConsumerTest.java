@@ -1,4 +1,4 @@
-package com.joy.kafka.consumer;
+package com.joy.kafka.simple.consumer;
 
 import java.util.Collections;
 import java.util.Properties;

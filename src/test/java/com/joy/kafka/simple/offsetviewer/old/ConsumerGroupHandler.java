@@ -1,4 +1,4 @@
-package com.joy.kafka.monitor.offsetviewer.old;
+package com.joy.kafka.simple.offsetviewer.old;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,8 +15,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.joy.kafka.monitor.offsetviewer.old.vo.OffsetPerPartitonVO;
-import com.joy.kafka.monitor.offsetviewer.old.vo.OffsetPerTopicVO;
+import com.joy.kafka.simple.offsetviewer.old.vo.OffsetPerPartitonVO;
+import com.joy.kafka.simple.offsetviewer.old.vo.OffsetPerTopicVO;
 
 /**
  * Created by lixun on 2017/3/23.
