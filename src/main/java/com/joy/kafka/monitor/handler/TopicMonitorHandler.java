@@ -1,14 +1,11 @@
 package com.joy.kafka.monitor.handler;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -44,29 +41,15 @@ public class TopicMonitorHandler extends MonitorAbstract {
 		ConsumerGroupVO consumerGroupVO = new ConsumerGroupVO();
 		
 		List<PartitionInfo> partitionInfoList = getPartitionInfo(topic);
-
 		if (partitionInfoList != null && !partitionInfoList.isEmpty()) {
-
-			//if (pratitions.size() > 1) {
-			//	sortAscendingPartitionNum(partitionInfoList);
-			//}
-
-			//logger.debug("partitionInfoList : " + partitionInfoList);
 			for (PartitionInfo partitionInfo : partitionInfoList) {
-
 				long endOffset = getLogEndOffset(null, partitionInfo.topic(), partitionInfo.partition());
-				//logger.debug("logEndOffset : " + endOffset);
-
+				
 				OffsetVO offsetVO = new OffsetVO();
 				offsetVO.setPartition(partitionInfo.partition()).setEndOffset(endOffset)
 						.setLeader(partitionInfo.leader().host()).setReplicas(partitionInfo.replicas());
 
 				consumerGroupVO.addOffsetList(offsetVO);
-				//logger.debug("topic : " + partitionInfo.topic());
-				//logger.debug("partition : " + partitionInfo.partition());
-				//logger.debug("leader : " + partitionInfo.leader().host());
-
-				//printPartitionInfo(partitionInfo);
 			}
 		}
 		
@@ -99,44 +82,5 @@ public class TopicMonitorHandler extends MonitorAbstract {
 
 	private Map<String, List<PartitionInfo>> getTopicListWithPartitionInfo() {
 		return KafkaConsumerFactory.getKafkaConsumer(getBrokers()).listTopics();
-	}
-
-//	private void sortAscendingPartitionNum(List<PartitionInfo> pratitionList) {
-//		pratitions = new ArrayList<PartitionInfo>(pratitionList);
-//		pratitions.sort(Comparator.comparing(PartitionInfo::partition));
-//	}
-
-	private void printPartitionInfo(PartitionInfo partitionInfo) {
-
-		StringBuilder sb = new StringBuilder();
-		sb.append(partitionInfo.topic()).append("-").append(partitionInfo.partition());
-		sb.append(partitionInfo.topic());
-
-		logger.debug("========================================================");
-		logger.debug("topic : " + partitionInfo.topic());
-		logger.debug("partition : " + partitionInfo.partition());
-		logger.debug("leader : " + partitionInfo.leader().host());
-		logger.debug("replicas  [");
-		for (Node node : partitionInfo.replicas()) {
-			logger.debug("         " + node.host());
-		}
-		logger.debug("          ]");
-
-		String groupID = "groupID-IGNITE_TEST-DE1559267912-ENT6787-MEMORYGRID,groupID-IGNITE_TEST-DE1559267912-ENT4963-ELASTICSEARCH";
-
-		long logEndOffset = getLogEndOffset(groupID, partitionInfo.topic(), partitionInfo.partition());
-		logger.debug("logEndOffset : " + logEndOffset);
-
-		OffsetAndMetadata committed = KafkaConsumerFactory.getKafkaConsumer(getBrokers(), groupID)
-				.committed(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
-		if (committed != null) {
-			logger.debug("처리건수 : " + committed.offset());
-			logger.debug("미처리건수 : " + (logEndOffset - committed.offset()));
-		} else {
-			logger.debug("committed is NULL : ");
-		}
-
-		logger.debug("");
-		logger.debug("");
 	}
 }

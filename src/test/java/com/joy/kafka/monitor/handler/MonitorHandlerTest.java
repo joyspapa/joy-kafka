@@ -40,7 +40,8 @@ public class MonitorHandlerTest {
 
 		//test.testGetPartitionInfo();
 		
-		test.testGetConsumerOffsetList();
+		//test.testGetConsumerOffsetList();
+		
 		test.testGetOffsetListByTopic();
 	}
 

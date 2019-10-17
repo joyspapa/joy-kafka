@@ -7,6 +7,8 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.vertx.core.json.JsonObject;
+
 public class ConsumerGroupVO {
 
 	private String topic;
@@ -80,9 +82,10 @@ public class ConsumerGroupVO {
 	@Override
     public String toString() {
 		try {
-			return new ObjectMapper().writeValueAsString(this);
-		} catch (JsonProcessingException e) {
-			return "ConsumerGroupVO.toString() JsonProcessingException warn : " + e.getMessage();
+			//return new ObjectMapper().writeValueAsString(this);
+			return JsonObject.mapFrom(this).toString();
+		} catch (Exception e) {
+			return "ConsumerGroupVO.toString() Json Parsing Exception warn : " + e.getMessage();
 		}
     }
 }
