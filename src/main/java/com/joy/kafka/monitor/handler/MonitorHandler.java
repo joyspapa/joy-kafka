@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -14,19 +13,17 @@ import org.slf4j.LoggerFactory;
 
 import com.joy.kafka.monitor.factory.KafkaAdminClientFactory;
 import com.joy.kafka.monitor.factory.KafkaConsumerFactory;
-import com.joy.kafka.monitor.handler.vo.ConsumerGroupVO;
-import com.joy.kafka.monitor.handler.vo.OffsetVO;
 
 import kafka.admin.ConsumerGroupCommand;
 import kafka.coordinator.group.GroupOverview;
 import scala.collection.JavaConverters;
 
-public abstract class MonitorAbstract {
-	private static final Logger logger = LoggerFactory.getLogger(MonitorAbstract.class);
+public class MonitorHandler {
+	private static final Logger logger = LoggerFactory.getLogger(MonitorHandler.class);
 
 	private String brokers;
 	
-	public MonitorAbstract(String brokers) {
+	public MonitorHandler(String brokers) {
 		this.brokers = brokers;
 	}
 	
@@ -49,6 +46,18 @@ public abstract class MonitorAbstract {
 		return KafkaConsumerFactory.getKafkaConsumer(getBrokers()).partitionsFor(topic);
 	}
 	
+	protected String getTopicNamebyGroupID(String groupID) {
+		scala.collection.immutable.Map<TopicPartition, Object> nodeListMap = KafkaAdminClientFactory
+				.getAdminClient(getBrokers()).listGroupOffsets(groupID);
+		
+		// scala 2.12
+		// JavaConverters.mapAsJavaMap(nodeListMap).keySet()
+		for (TopicPartition t : JavaConverters.mapAsJavaMapConverter(nodeListMap).asJava().keySet()) {
+			return t.topic();
+		}
+		return "none";
+	}
+	
 	/*
 	 * https://github.com/rusonding/kafka-monitor/blob/master/common/src/main/java/com/kafka/monitor/common/ConsumerGroupCommand.java
 	 *
@@ -61,15 +70,23 @@ public abstract class MonitorAbstract {
 		try {
 			nodeListMap = KafkaAdminClientFactory.getAdminClient(brokers).listAllConsumerGroups();
 
-			Map<Node, scala.collection.immutable.List<GroupOverview>> map = JavaConverters.mapAsJavaMap(nodeListMap);
+			// scala 2.12
+			// JavaConverters.mapAsJavaMap(nodeListMap).keySet()
+			Map<Node, scala.collection.immutable.List<GroupOverview>> map = JavaConverters.mapAsJavaMapConverter(nodeListMap).asJava();
 
 			for (Node keyNode : map.keySet()) {
 				logger.debug("Node : " + keyNode.toString());
-
-				List<GroupOverview> re = JavaConverters.bufferAsJavaList(map.get(keyNode).toBuffer());
-				for (GroupOverview obj : re) {
-					logger.debug("groupID : " + obj.groupId());
-					list.add(obj.groupId());
+				
+				// scala 2.12
+				// List<GroupOverview> re = JavaConverters.bufferAsJavaList(map.get(keyNode).toBuffer());
+				//for (GroupOverview obj : re) {
+				//	logger.debug("groupID : " + obj.groupId());
+				//	list.add(obj.groupId());
+				//}
+				List<Object> re = JavaConverters.bufferAsJavaListConverter(map.get(keyNode).toBuffer()).asJava();
+				for (Object obj : re) {
+					logger.debug("groupID : " + ((GroupOverview)obj).groupId());
+					list.add(((GroupOverview)obj).groupId());
 				}
 			}
 		} catch (Throwable ex) {
@@ -101,7 +118,9 @@ public abstract class MonitorAbstract {
 			e.printStackTrace();
 		}
 
-		Iterator<String> re = JavaConverters.asJavaIterator(result.iterator());
+		// scala 2.12
+		// Iterator<String> re = JavaConverters.asJavaIterator(result.iterator());
+		Iterator<String> re = JavaConverters.asJavaIteratorConverter(result.iterator()).asJava();
 		while (re.hasNext()) {
 			logger.debug("groupID : " + re.next());
 		}

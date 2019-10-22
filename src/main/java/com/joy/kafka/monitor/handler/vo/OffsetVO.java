@@ -2,17 +2,16 @@ package com.joy.kafka.monitor.handler.vo;
 
 import org.apache.kafka.common.Node;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.json.JsonObject;
 
 public class OffsetVO {
 
 	private int partition;
 	private long endOffset;
 	private long committedOffset;
-	private String host;
-	private String consumerID;
-	private String clientID;
+	private String host = "";
+	private String consumerID = "";
+	private String clientID = "";
 	private String leader = "";
 	private String replicas = "";
 	
@@ -26,6 +25,7 @@ public class OffsetVO {
 	}
 
 	public long getEndOffset() {
+		//return 888888888888L;
 		return endOffset;
 	}
 
@@ -39,12 +39,17 @@ public class OffsetVO {
 	}
 
 	public OffsetVO setCommittedOffset(long committedOffset) {
-		this.committedOffset = (committedOffset == -1L ? 0L : committedOffset);
+		this.committedOffset = committedOffset;
+		//this.committedOffset = (committedOffset == -1L ? 0L : committedOffset);
 		return this;
 	}
 
 	public long getLag() {
-		return endOffset - committedOffset;
+		if(0 < host.length()) {
+			return endOffset - committedOffset;
+		} else {
+			return -1;
+		}
 	}
 
 	public String getHost() {
@@ -100,10 +105,10 @@ public class OffsetVO {
 	
 	@Override
 	public String toString() {
-		try {
-			return new ObjectMapper().writeValueAsString(this);
-		} catch (JsonProcessingException e) {
-			return "OffsetVO.toString() JsonProcessingException warn : " + e.getMessage();
-		}
+		return JsonObject.mapFrom(this).toString();
+	}
+	
+	public String toPrettyJson() {
+		return JsonObject.mapFrom(this).encodePrettily();
 	}
 }

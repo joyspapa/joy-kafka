@@ -3,7 +3,7 @@ package com.joy.kafka.monitor.util;
 public enum ViewColumnType {
 
 	DT               ("DateTime", 20),
-	TOPIC            ("Topic", 45),
+	TOPIC            ("Topic", 55),
 	GROUP            ("Consumer", 60),
 	PARTITION        ("Partition", 10),	
 	HOST             ("Host", 10),

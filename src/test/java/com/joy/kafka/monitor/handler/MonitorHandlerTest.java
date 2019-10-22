@@ -11,9 +11,8 @@ import org.apache.kafka.common.PartitionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.joy.kafka.monitor.handler.ConsumerMonitorHandler;
-import com.joy.kafka.monitor.handler.TopicMonitorHandler;
 import com.joy.kafka.monitor.handler.vo.ConsumerGroupVO;
+import com.joy.kafka.monitor.rest.vo.ResponseVO;
 import com.joy.kafka.monitor.util.ViewColumnType;
 import com.joy.kafka.monitor.util.ViewHandler;
 
@@ -26,12 +25,16 @@ public class MonitorHandlerTest {
 	public static void main(String[] args) {
 		String brokers = "192.168.10.82:9092,192.168.10.83:9092,192.168.10.84:9092";
 		brokers = "192.168.10.82:9092";
-		brokers = "192.168.10.87:9092,192.168.10.80:9092";
+		//brokers = "192.168.10.87:9092,192.168.10.80:9092";
 		
 		consumerMonitor = new ConsumerMonitorHandler(brokers);
 		topicMonitor = new TopicMonitorHandler(brokers);
 		
 		MonitorHandlerTest test = new MonitorHandlerTest();
+		test.testGetDeployList();
+		
+		//test.testGetConsumerListOffsetsByDeploy();
+		
 		//test.testGetTopicList();
 		
 		//test.testGetConsumerList();
@@ -42,9 +45,24 @@ public class MonitorHandlerTest {
 		
 		//test.testGetConsumerOffsetList();
 		
-		test.testGetOffsetListByTopic();
+		//test.testGetOffsetListByTopic();
 	}
 
+	public void testGetDeployList() {
+		List<ConsumerGroupVO> deploySet = consumerMonitor.getDeployList();
+		for(ConsumerGroupVO consumerGroupVO : deploySet) {
+			System.out.println(consumerGroupVO.getDeployName());
+		}
+	}
+	
+	public void testGetConsumerListOffsetsByDeploy() {
+		String deploy = "TABLEUSERDATA"; // HCS_TEST , TABLEUSERDATA
+		
+		ResponseVO vo = new ResponseVO(consumerMonitor.getConsumerListOffsetsByDeploy(deploy));
+		System.out.println(vo.toPrettyJson());
+		System.out.println(ViewHandler.showByConsumerOffsetList(vo.getResults()));
+	}
+	
 	public void testGetTopicList() {
 		Set<String> topicSet = topicMonitor.getTopicList();
 		
@@ -62,9 +80,9 @@ public class MonitorHandlerTest {
 	}
 	
 	public void testGetConsumerOffsetList() {
-		List<ConsumerGroupVO> groupList = consumerMonitor.getConsumerOffsets();
-		
-		System.out.print(ViewHandler.showByConsumerOffsetList(groupList));
+		ResponseVO vo = new ResponseVO(consumerMonitor.getConsumerListOffsets());
+		System.out.println(vo.toPrettyJson());
+		System.out.println(ViewHandler.showByConsumerOffsetList(vo.getResults()));
 	}
 	
 	private ConsumerGroupVO testGetConsumerOffset() {
@@ -85,9 +103,9 @@ public class MonitorHandlerTest {
 		//String groupID = "groupID-IGNITE_TEST-DE1559267912-ENT6787-MEMORYGRID";
 		//logger.debug("> topicName : {}", monitor.getTopicNamebyGroupID(groupID));
 		
-		List<ConsumerGroupVO> topicOffsetList = topicMonitor.getTopicOffsets();
-		//logger.debug("> topicOffsetList : {}", topicOffsetList);
-		System.out.print(ViewHandler.showByTopicOffsetList(topicOffsetList));
+		ResponseVO vo = new ResponseVO(topicMonitor.getTopicOffsets());
+		System.out.println(vo.toPrettyJson());
+		System.out.println(ViewHandler.showByTopicOffsetList(vo.getResults()));
 	}
 	
 	@Deprecated

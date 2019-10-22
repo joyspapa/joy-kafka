@@ -26,9 +26,10 @@ public class KafkaMonitorRest extends AbstractVerticle {
 	private DeploymentOptions getWorkerDeploymentOptions() {
 		DeploymentOptions options = new DeploymentOptions()
 				  .setWorker(true)
-				  .setInstances(1) // matches the worker pool size below
-				  .setWorkerPoolName("kafka-monitor-worker-pool")
-				  .setWorkerPoolSize(1);
+				  //.setInstances(2) // matches the worker pool size below
+				  //.setWorkerPoolName("kafka-monitor-worker-pool")
+				  //.setWorkerPoolSize(2)
+				  ;
 		
 		return options;
 	}

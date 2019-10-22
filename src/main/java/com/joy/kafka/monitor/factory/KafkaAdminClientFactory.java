@@ -23,7 +23,9 @@ public class KafkaAdminClientFactory {
 	private static void createAdminClient(String brokers) {
 		Properties props = new Properties();
 		props.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokers);
-
+		props.put(CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG, String.valueOf(1000));
+		props.put(CommonClientConfigs.METADATA_MAX_AGE_CONFIG, String.valueOf(1000));
+		
 		try {
 			adminClient = AdminClient.create(props);
 		} catch (Throwable ex) {
@@ -38,8 +40,9 @@ public class KafkaAdminClientFactory {
 			try {
 				adminClient.close();
 				logger.info("AdminClient has been closed ! ");
-			} catch (Exception ex) {
+			} catch (Throwable ex) {
 				logger.warn("During closing AdminClient warn : ", ex);
+			} finally {
 				adminClient = null;
 			}
 		}

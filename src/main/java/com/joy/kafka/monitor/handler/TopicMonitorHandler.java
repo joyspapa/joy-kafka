@@ -7,19 +7,15 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.joy.kafka.monitor.factory.KafkaAdminClientFactory;
 import com.joy.kafka.monitor.factory.KafkaConsumerFactory;
 import com.joy.kafka.monitor.handler.vo.ConsumerGroupVO;
 import com.joy.kafka.monitor.handler.vo.OffsetVO;
 import com.joy.kafka.monitor.util.DateTimeUtils;
 
-import scala.collection.JavaConverters;
-
-public class TopicMonitorHandler extends MonitorAbstract {
+public class TopicMonitorHandler extends MonitorHandler {
 	private static final Logger logger = LoggerFactory.getLogger(TopicMonitorHandler.class);
 
 	public TopicMonitorHandler(String brokers) {
@@ -38,9 +34,9 @@ public class TopicMonitorHandler extends MonitorAbstract {
 	}
 
 	public ConsumerGroupVO getTopicOffsets(String topic) {
-		ConsumerGroupVO consumerGroupVO = new ConsumerGroupVO();
-		
 		List<PartitionInfo> partitionInfoList = getPartitionInfo(topic);
+		
+		ConsumerGroupVO consumerGroupVO = new ConsumerGroupVO();
 		if (partitionInfoList != null && !partitionInfoList.isEmpty()) {
 			for (PartitionInfo partitionInfo : partitionInfoList) {
 				long endOffset = getLogEndOffset(null, partitionInfo.topic(), partitionInfo.partition());
@@ -49,6 +45,7 @@ public class TopicMonitorHandler extends MonitorAbstract {
 				offsetVO.setPartition(partitionInfo.partition()).setEndOffset(endOffset)
 						.setLeader(partitionInfo.leader().host()).setReplicas(partitionInfo.replicas());
 
+				consumerGroupVO.addEndOffsetAll(endOffset);
 				consumerGroupVO.addOffsetList(offsetVO);
 			}
 		}
@@ -69,15 +66,6 @@ public class TopicMonitorHandler extends MonitorAbstract {
 		}
 
 		return topicList;
-	}
-
-	public String getTopicNamebyGroupID(String groupID) {
-		scala.collection.immutable.Map<TopicPartition, Object> nodeListMap = KafkaAdminClientFactory
-				.getAdminClient(getBrokers()).listGroupOffsets(groupID);
-		for (TopicPartition t : JavaConverters.mapAsJavaMap(nodeListMap).keySet()) {
-			return t.topic();
-		}
-		return "none";
 	}
 
 	private Map<String, List<PartitionInfo>> getTopicListWithPartitionInfo() {

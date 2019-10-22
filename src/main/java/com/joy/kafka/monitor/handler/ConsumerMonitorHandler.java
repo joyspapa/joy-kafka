@@ -1,7 +1,7 @@
 package com.joy.kafka.monitor.handler;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,79 +25,136 @@ import kafka.coordinator.group.GroupOverview;
 import scala.collection.JavaConversions;
 import scala.collection.mutable.Buffer;
 
-public class ConsumerMonitorHandler extends MonitorAbstract {
+public class ConsumerMonitorHandler extends MonitorHandler {
 	private static final Logger logger = LoggerFactory.getLogger(ConsumerMonitorHandler.class);
 
 	public ConsumerMonitorHandler(String brokers) {
 		super(brokers);
 	}
 
-	public List<ConsumerGroupVO> getConsumerOffsets() {
+	public List<ConsumerGroupVO> getConsumerListOffsets() {
+		return getConsumerListOffsets(false);
+	}
+
+	public List<ConsumerGroupVO> getConsumerListOffsets(boolean isGetAllConsumer) {
 		List<String> groupIDList = getConsumerList();
 		List<ConsumerGroupVO> consumerOffsetList = new ArrayList<ConsumerGroupVO>();
-		
-		if (!groupIDList.isEmpty()) {
-			ConsumerGroupVO consumerGroupVO = null;
-			for (String groupID : groupIDList) {
-				consumerGroupVO = getConsumerOffsets(groupID);
-				if (consumerGroupVO != null) {
-					consumerOffsetList.add(consumerGroupVO);
-				}
+
+		for (String groupID : groupIDList) {
+			ConsumerGroupVO returnConsumerGroupVO = getConsumerOffsets(groupID, isGetAllConsumer);
+			if (returnConsumerGroupVO != null) {
+				consumerOffsetList.add(returnConsumerGroupVO);
 			}
 		}
+		
 		return consumerOffsetList;
 	}
 
 	public ConsumerGroupVO getConsumerOffsets(String groupID) {
+		return getConsumerOffsets(groupID, false);
+	}
+
+	public ConsumerGroupVO getConsumerOffsets(String groupID, boolean isGetAllConsumer) {
 		List<AdminClient.ConsumerSummary> runningConsumerList = getConsumerGroupSummary(groupID);
 
-		if (runningConsumerList == null) {
-			return null;
-		}
-		
-		//logger.debug("Running Consumer size() : {} of grouptID : {}", runningConsumerList.size(), groupID);
-
-		String topic = null;
-		Map<Integer, PartitionInfo> partitionInfoMap = null;
 		ConsumerGroupVO consumerGroupVO = new ConsumerGroupVO();
-		for (AdminClient.ConsumerSummary summary : runningConsumerList) {
-			Buffer<TopicPartition> assignmentBuffer = summary.assignment().toBuffer();
-			List<TopicPartition> topicPartitions = JavaConversions.bufferAsJavaList(assignmentBuffer);
 
-			for (TopicPartition topicPartition : topicPartitions) {
-				if (topic == null) {
-					topic = topicPartition.topic();
-					partitionInfoMap = getPartitionInfoMap(topic);
-				}
+		if (runningConsumerList == null) {
+			// Running 상태가 아닌 Consumer 도 포함시킨다.
+			if (isGetAllConsumer) {
+				String topicName = getTopicNamebyGroupID(groupID);
+				consumerGroupVO = new TopicMonitorHandler(getBrokers()).getTopicOffsets(topicName);
+				consumerGroupVO.setGroupID(groupID);
+			} else {
+				return null;
+			}
 
-				OffsetAndMetadata committed = KafkaConsumerFactory.getKafkaConsumer(getBrokers(), groupID)
-						.committed(new TopicPartition(topic, topicPartition.partition()));
-				if (committed != null) {
-					long endOffset = getLogEndOffset(groupID, topic, topicPartition.partition());
+		} else {
+			//logger.debug("Running Consumer size() : {} of grouptID : {}", runningConsumerList.size(), groupID);
 
-					OffsetVO offsetVO = new OffsetVO();
-					offsetVO.setPartition(topicPartition.partition()).setHost(summary.host()).setEndOffset(endOffset)
-							.setCommittedOffset(committed.offset());
-					//offsetVO.setConsumerID(summary.consumerId()).setClientID(summary.clientId());
+			String topic = null;
+			Map<Integer, PartitionInfo> partitionInfoMap = null;
 
-					if (partitionInfoMap != null) {
-						offsetVO.setLeader(partitionInfoMap.get(topicPartition.partition()).leader().host())
-								.setReplicas(partitionInfoMap.get(topicPartition.partition()).replicas());
+			for (AdminClient.ConsumerSummary summary : runningConsumerList) {
+				Buffer<TopicPartition> assignmentBuffer = summary.assignment().toBuffer();
+				List<TopicPartition> topicPartitions = JavaConversions.bufferAsJavaList(assignmentBuffer);
+
+				for (TopicPartition topicPartition : topicPartitions) {
+					if (topic == null) {
+						topic = topicPartition.topic();
+						partitionInfoMap = getPartitionInfoMap(topic);
 					}
 
-					consumerGroupVO.addOffsetList(offsetVO);
-					consumerGroupVO.addEndOffsetAll(endOffset);
-					consumerGroupVO.addCommittedOffsetAll(committed.offset());
+					OffsetAndMetadata committed = KafkaConsumerFactory.getKafkaConsumer(getBrokers(), groupID)
+							.committed(new TopicPartition(topic, topicPartition.partition()));
+					if (committed != null) {
+						long endOffset = getLogEndOffset(groupID, topic, topicPartition.partition());
+
+						OffsetVO offsetVO = new OffsetVO();
+						offsetVO.setPartition(topicPartition.partition()).setHost(summary.host())
+								.setEndOffset(endOffset).setCommittedOffset(committed.offset());
+						//offsetVO.setConsumerID(summary.consumerId()).setClientID(summary.clientId());
+
+						if (partitionInfoMap != null) {
+							offsetVO.setLeader(partitionInfoMap.get(topicPartition.partition()).leader().host())
+									.setReplicas(partitionInfoMap.get(topicPartition.partition()).replicas());
+						}
+
+						consumerGroupVO.addOffsetList(offsetVO);
+						consumerGroupVO.addEndOffsetAll(endOffset);
+						consumerGroupVO.addCommittedOffsetAll(committed.offset());
+					}
+				}
+			}
+
+			consumerGroupVO.setTopic(topic);
+			consumerGroupVO.setGroupID(groupID);
+			consumerGroupVO.setConsumerRunning(true);
+			consumerGroupVO.setCreateDT(DateTimeUtils.getNormalDate());
+		}
+
+		return consumerGroupVO;
+	}
+
+	public List<ConsumerGroupVO> getConsumerListOffsetsByDeploy(String deployName) {
+		List<ConsumerGroupVO> consumerOffsetList = new ArrayList<ConsumerGroupVO>();
+		List<String> groupIDList = getConsumerList();
+		for (String groupID : groupIDList) {
+			if (groupID.contains(deployName)) {
+				ConsumerGroupVO returnConsumerGroupVO = getConsumerOffsets(groupID, true);
+				if (returnConsumerGroupVO != null) {
+					consumerOffsetList.add(returnConsumerGroupVO);
 				}
 			}
 		}
 
-		consumerGroupVO.setTopic(topic);
-		consumerGroupVO.setGroupID(groupID);
-		consumerGroupVO.setCreateDT(DateTimeUtils.getNormalDate());
-		
-		return consumerGroupVO;
+		return consumerOffsetList;
+	}
 
+	public List<ConsumerGroupVO> getDeployList() {
+		List<ConsumerGroupVO> consumerOffsetList = new ArrayList<ConsumerGroupVO>();
+		
+		Map<String, Integer> deployMap = new HashMap<String, Integer>();
+
+		List<String> groupList = getConsumerList();
+		for (String groupID : groupList) {
+			deployMap.put(extractDeploy(groupID), 0);
+		}
+		
+		for(String deployName : deployMap.keySet()) {
+			ConsumerGroupVO consumerGroupVO = new ConsumerGroupVO();
+			consumerGroupVO.setCreateDT(DateTimeUtils.getNormalDate());
+			consumerGroupVO.setDeployName(deployName);
+			
+			consumerOffsetList.add(consumerGroupVO);
+		}
+		
+		return consumerOffsetList;
+	}
+
+	private String extractDeploy(String groupID) {
+		// 	groupID-HCS_TEST-DE1570154270-ENT3764-SP
+		return groupID.split("-")[1];
 	}
 
 	/*
@@ -116,8 +173,13 @@ public class ConsumerMonitorHandler extends MonitorAbstract {
 				groupID = iterator.next().groupId();
 				groupList.add(groupID);
 			}
-
+			//logger.info("groupAll : {}", groupAll);
 		} catch (Throwable ex) {
+			if (ex instanceof RuntimeException) {
+				KafkaAdminClientFactory.closeAdminClient();
+				logger.warn("getConsumerList KafkaAdmin Connection warn : ex.getMessage()={}", ex.getMessage());
+			}
+
 			logger.warn("getConsumerList warn : ", ex);
 		}
 
@@ -134,14 +196,14 @@ public class ConsumerMonitorHandler extends MonitorAbstract {
 		scala.collection.immutable.List<ConsumerSummary> consumerSummaryList = ConsumerGroupSummary.consumers().get();
 
 		if (consumerSummaryList == null || consumerSummaryList.size() == 0) {
-			logger.warn("[getConsumerGroupSummary] consumer({}) is not running !", groupID);
+			//logger.warn("[getConsumerGroupSummary] consumer({}) is not running !", groupID);
 			return null;
 		}
 
 		Buffer<AdminClient.ConsumerSummary> buffer = consumerSummaryList.toBuffer();
 		return JavaConversions.bufferAsJavaList(buffer);
 	}
-	
+
 	protected Map<Integer, PartitionInfo> getPartitionInfoMap(String topic) {
 		return getPartitionInfo(topic).stream()
 				.collect(Collectors.toMap(PartitionInfo::partition, partition -> partition));
