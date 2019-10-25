@@ -21,10 +21,16 @@ import scala.collection.JavaConverters;
 public class MonitorHandler {
 	private static final Logger logger = LoggerFactory.getLogger(MonitorHandler.class);
 
+	private String clientID;
 	private String brokers;
 	
-	public MonitorHandler(String brokers) {
+	public MonitorHandler(String clientID, String brokers) {
+		this.clientID = clientID;
 		this.brokers = brokers;
+	}
+	
+	public String getClientID() {
+		return clientID;
 	}
 	
 	public String getBrokers() {

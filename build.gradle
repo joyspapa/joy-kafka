@@ -90,6 +90,7 @@ dependencies {
     //=========================================
 	compile "ch.qos.logback:logback-classic:$logbackVersion"
 	
+	compile "org.rrd4j:rrd4j:3.5"
 	//=========================================
     // JUnit
     //=========================================

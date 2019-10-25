@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.joy.kafka.monitor.handler.vo.ConsumerGroupVO;
-import com.joy.kafka.monitor.rest.vo.ResponseVO;
+import com.joy.kafka.monitor.rest.vo.MonitorResponseVO;
 import com.joy.kafka.monitor.util.ViewColumnType;
 import com.joy.kafka.monitor.util.ViewHandler;
 
@@ -27,8 +27,8 @@ public class MonitorHandlerTest {
 		brokers = "192.168.10.82:9092";
 		//brokers = "192.168.10.87:9092,192.168.10.80:9092";
 		
-		consumerMonitor = new ConsumerMonitorHandler(brokers);
-		topicMonitor = new TopicMonitorHandler(brokers);
+		consumerMonitor = new ConsumerMonitorHandler("localhost", brokers);
+		topicMonitor = new TopicMonitorHandler("localhost", brokers);
 		
 		MonitorHandlerTest test = new MonitorHandlerTest();
 		test.testGetDeployList();
@@ -58,7 +58,7 @@ public class MonitorHandlerTest {
 	public void testGetConsumerListOffsetsByDeploy() {
 		String deploy = "TABLEUSERDATA"; // HCS_TEST , TABLEUSERDATA
 		
-		ResponseVO vo = new ResponseVO(consumerMonitor.getConsumerListOffsetsByDeploy(deploy));
+		MonitorResponseVO vo = new MonitorResponseVO(consumerMonitor.getConsumerListOffsetsByDeploy(deploy));
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByConsumerOffsetList(vo.getResults()));
 	}
@@ -80,7 +80,7 @@ public class MonitorHandlerTest {
 	}
 	
 	public void testGetConsumerOffsetList() {
-		ResponseVO vo = new ResponseVO(consumerMonitor.getConsumerListOffsets());
+		MonitorResponseVO vo = new MonitorResponseVO(consumerMonitor.getConsumerListOffsets());
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByConsumerOffsetList(vo.getResults()));
 	}
@@ -103,7 +103,7 @@ public class MonitorHandlerTest {
 		//String groupID = "groupID-IGNITE_TEST-DE1559267912-ENT6787-MEMORYGRID";
 		//logger.debug("> topicName : {}", monitor.getTopicNamebyGroupID(groupID));
 		
-		ResponseVO vo = new ResponseVO(topicMonitor.getTopicOffsets());
+		MonitorResponseVO vo = new MonitorResponseVO(topicMonitor.getTopicOffsets());
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByTopicOffsetList(vo.getResults()));
 	}

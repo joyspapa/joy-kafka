@@ -16,6 +16,9 @@ import com.joy.kafka.monitor.factory.KafkaAdminClientFactory;
 import com.joy.kafka.monitor.factory.KafkaConsumerFactory;
 import com.joy.kafka.monitor.handler.vo.ConsumerGroupVO;
 import com.joy.kafka.monitor.handler.vo.OffsetVO;
+import com.joy.kafka.monitor.report.ReportHandler;
+import com.joy.kafka.monitor.report.ReportOffsetVO;
+import com.joy.kafka.monitor.report.ReportVO;
 import com.joy.kafka.monitor.util.DateTimeUtils;
 
 import kafka.admin.AdminClient;
@@ -28,8 +31,8 @@ import scala.collection.mutable.Buffer;
 public class ConsumerMonitorHandler extends MonitorHandler {
 	private static final Logger logger = LoggerFactory.getLogger(ConsumerMonitorHandler.class);
 
-	public ConsumerMonitorHandler(String brokers) {
-		super(brokers);
+	public ConsumerMonitorHandler(String clientID, String brokers) {
+		super(clientID, brokers);
 	}
 
 	public List<ConsumerGroupVO> getConsumerListOffsets() {
@@ -41,20 +44,20 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 		List<ConsumerGroupVO> consumerOffsetList = new ArrayList<ConsumerGroupVO>();
 
 		for (String groupID : groupIDList) {
-			ConsumerGroupVO returnConsumerGroupVO = getConsumerOffsets(groupID, isGetAllConsumer);
+			ConsumerGroupVO returnConsumerGroupVO = getConsumerOffsets(groupID, isGetAllConsumer, false);
 			if (returnConsumerGroupVO != null) {
 				consumerOffsetList.add(returnConsumerGroupVO);
 			}
 		}
-		
+
 		return consumerOffsetList;
 	}
 
 	public ConsumerGroupVO getConsumerOffsets(String groupID) {
-		return getConsumerOffsets(groupID, false);
+		return getConsumerOffsets(groupID, false, false);
 	}
 
-	public ConsumerGroupVO getConsumerOffsets(String groupID, boolean isGetAllConsumer) {
+	public ConsumerGroupVO getConsumerOffsets(String groupID, boolean isGetAllConsumer, boolean isReport) {
 		List<AdminClient.ConsumerSummary> runningConsumerList = getConsumerGroupSummary(groupID);
 
 		ConsumerGroupVO consumerGroupVO = new ConsumerGroupVO();
@@ -63,7 +66,7 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 			// Running 상태가 아닌 Consumer 도 포함시킨다.
 			if (isGetAllConsumer) {
 				String topicName = getTopicNamebyGroupID(groupID);
-				consumerGroupVO = new TopicMonitorHandler(getBrokers()).getTopicOffsets(topicName);
+				consumerGroupVO = new TopicMonitorHandler(getClientID(), getBrokers()).getTopicOffsets(topicName);
 				consumerGroupVO.setGroupID(groupID);
 			} else {
 				return null;
@@ -103,6 +106,12 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 						consumerGroupVO.addOffsetList(offsetVO);
 						consumerGroupVO.addEndOffsetAll(endOffset);
 						consumerGroupVO.addCommittedOffsetAll(committed.offset());
+
+						// for report
+						if (isReport) {
+							ReportHandler.addOffsetReport(getClientID(), groupID, topicPartition.partition(),
+									new ReportOffsetVO(endOffset, committed.offset()));
+						}
 					}
 				}
 			}
@@ -116,12 +125,17 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 		return consumerGroupVO;
 	}
 
+	public List<ReportVO> getConsumerOffsetsReport(String groupID) {
+		getConsumerOffsets(groupID, false, true);
+		return ReportHandler.getOffsetReport(getClientID(), groupID);
+	}
+
 	public List<ConsumerGroupVO> getConsumerListOffsetsByDeploy(String deployName) {
 		List<ConsumerGroupVO> consumerOffsetList = new ArrayList<ConsumerGroupVO>();
 		List<String> groupIDList = getConsumerList();
 		for (String groupID : groupIDList) {
 			if (groupID.contains(deployName)) {
-				ConsumerGroupVO returnConsumerGroupVO = getConsumerOffsets(groupID, true);
+				ConsumerGroupVO returnConsumerGroupVO = getConsumerOffsets(groupID, true, false);
 				if (returnConsumerGroupVO != null) {
 					consumerOffsetList.add(returnConsumerGroupVO);
 				}
@@ -133,22 +147,22 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 
 	public List<ConsumerGroupVO> getDeployList() {
 		List<ConsumerGroupVO> consumerOffsetList = new ArrayList<ConsumerGroupVO>();
-		
+
 		Map<String, Integer> deployMap = new HashMap<String, Integer>();
 
 		List<String> groupList = getConsumerList();
 		for (String groupID : groupList) {
 			deployMap.put(extractDeploy(groupID), 0);
 		}
-		
-		for(String deployName : deployMap.keySet()) {
+
+		for (String deployName : deployMap.keySet()) {
 			ConsumerGroupVO consumerGroupVO = new ConsumerGroupVO();
 			consumerGroupVO.setCreateDT(DateTimeUtils.getNormalDate());
 			consumerGroupVO.setDeployName(deployName);
-			
+
 			consumerOffsetList.add(consumerGroupVO);
 		}
-		
+
 		return consumerOffsetList;
 	}
 

@@ -18,8 +18,8 @@ import com.joy.kafka.monitor.util.DateTimeUtils;
 public class TopicMonitorHandler extends MonitorHandler {
 	private static final Logger logger = LoggerFactory.getLogger(TopicMonitorHandler.class);
 
-	public TopicMonitorHandler(String brokers) {
-		super(brokers);
+	public TopicMonitorHandler(String clientID, String brokers) {
+		super(clientID, brokers);
 	}
 
 	public List<ConsumerGroupVO> getTopicOffsets() {

@@ -15,13 +15,20 @@ public class BeautifulPrint {
 
 	public static void main(String[] args) throws Exception {
 		BeautifulPrint print = new BeautifulPrint();
+		print.test();
 		//print.print1();
 		//print.print2();
 		//print.print4();
 		//print.printVertxJson();
-		print.printJacksonJson();
+		//print.printJacksonJson();
 	}
 
+	private void test() {
+		for(int i = 0; i < 10; i++) {
+			System.out.println(i%2);
+		}
+	}
+	
 	// https://stackoverflow.com/questions/29052615/nice-looking-table-with-stringbuilder
 	private void print1() {
 		System.out.format("%-25s %9.7f%n", "K and Burstner", 0.055170);
@@ -46,7 +53,7 @@ public class BeautifulPrint {
 	}
 
 	private void print3() {
-		ConsumerMonitorHandler monitor = new ConsumerMonitorHandler("192.168.10.82:9092");
+		ConsumerMonitorHandler monitor = new ConsumerMonitorHandler("localhost", "192.168.10.82:9092");
 		monitor.getConsumerList();
 	}
 

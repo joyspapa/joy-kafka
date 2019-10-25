@@ -35,9 +35,12 @@ public class RequestService extends AbstractVerticle {
 			long startTime = System.currentTimeMillis();
 
 			vertx.eventBus().<String> send(Constant.bus_response_type_json,
-					new JsonObject().put("viewtype", request.request().getParam("viewtype")).put("id",
-							request.request().getParam("id")),
+					new JsonObject().put("clientip", request.request().getParam("clientip"))
+							.put("viewtype", request.request().getParam("viewtype"))
+							.put("id", request.request().getParam("id")),
+							
 					asyncResult -> {
+						
 						HttpServerResponse res = request.response();
 						try {
 							if (asyncResult.succeeded()) {
@@ -53,11 +56,13 @@ public class RequestService extends AbstractVerticle {
 
 							logger.info("[{}] elapsed time : {} ms", request.request().getParam("clientip"),
 									System.currentTimeMillis() - startTime);
+							
 						} catch (Throwable th) {
 							JsonObject replyObject = new JsonObject();
 							replyObject.put("success", false).put("errormessage", th.getMessage());
 							res.setStatusCode(501).end(replyObject.toString());
 						}
+						
 					});
 
 		});

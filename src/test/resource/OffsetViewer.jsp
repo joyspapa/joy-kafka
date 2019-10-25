@@ -8,7 +8,7 @@
 	Logger logger = LoggerFactory.getLogger(getClass());
 
     String baseUrl = "";
-    String synapseURL = "http://192.168.10.57:9081/kafka/monitor/";
+    String synapseURL = "http://192.168.10.171:9081/kafka/monitor/";
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 %>
 
@@ -21,7 +21,7 @@
 	StringBuilder sbBaseUrl = new StringBuilder();
 	sbBaseUrl.append("http://");
 	sbBaseUrl.append(InetAddress.getLocalHost().getHostAddress());
-	sbBaseUrl.append(":8080/logplanet-ui-admin/OffsetViewer.jsp");
+	sbBaseUrl.append(":8080/logplanet-ui-admin/OffsetViewerTest.jsp");
 	//sbBaseUrl.append(request.getRemoteAddr());
     
 	//baseUrl = "http://" + InetAddress.getLocalHost().getHostAddress() +":8080/logplanet-ui-admin/Offset.jsp?clientip="+request.getRemoteAddr();
@@ -146,23 +146,25 @@ table.GeneratedTable3 thead {
 			JsonNode jsonNode = new ObjectMapper().readTree(jsonString);
 			if (jsonNode.get("success").asBoolean()) {
 
-				JsonNode resultsArrayNode = jsonNode.path("results");
-				int resultsCount = resultsArrayNode.size();
+				JsonNode hasReportNode = jsonNode.get("report");
+				if(hasReportNode == null) {
+					JsonNode resultsArrayNode = jsonNode.path("results");
+					int resultsCount = resultsArrayNode.size();
 
-				if (resultsCount > 0) {
+					if (resultsCount > 0) {
 
-					boolean hasGroupID = true;
-					String checkDeployName = resultsArrayNode.get(0).get("deployName").asText();
-					String checkGroupID = resultsArrayNode.get(0).get("groupID").asText();
+						boolean hasGroupID = true;
+						String checkDeployName = resultsArrayNode.get(0).get("deployName").asText();
+						String checkGroupID = resultsArrayNode.get(0).get("groupID").asText();
 
-					if (checkGroupID == null || checkGroupID.length() == 0) {
+						if (checkGroupID == null || checkGroupID.length() == 0) {
 						hasGroupID = false;
-					}
+						}
 
-					//logger.warn("jsonString : " + jsonString);
+						//logger.warn("jsonString : " + jsonString);
 
 
-					if (checkDeployName.length() != 0) {
+						if (checkDeployName.length() != 0) {
 %>
 	<p>
 	<table class="GeneratedTable3">
@@ -171,10 +173,12 @@ table.GeneratedTable3 thead {
 				<td><%=resultsArrayNode.get(0).get("createDT").asText()%></td>
 			</tr>
 <%
+						String bgcolor = "";
 						for (int resultPos = 0; resultPos < resultsCount; resultPos++) {
+							bgcolor = (resultPos%2 == 1)?	"bgcolor='#F0F0F0'":"";
 							checkDeployName = resultsArrayNode.get(resultPos).get("deployName").asText();
 %>
-			<tr>
+			<tr <%=bgcolor%>>
 				<td>
 					<a href="<%=baseUrl%>&viewtype=deploy&id=<%=checkDeployName%>" style="text-decoration:none;color:black;">
 						<%=checkDeployName%>
@@ -204,16 +208,18 @@ table.GeneratedTable3 thead {
 				<td align="center">Replicas</td>
 			</tr>
 			<%
+				String bgcolor = "";
 				JsonNode offsetListNode = null;
 				for (int resultPos = 0; resultPos < resultsCount; resultPos++) {
 					offsetListNode = resultsArrayNode.get(resultPos).path("offsetList");
 					int offsetListNodeCount = offsetListNode.size();
-						
+					bgcolor = (resultPos%2 == 1)?	"bgcolor='#F0F0F0'":"";
+
 					String topicName = null;
 					for (int offsetListPos = 0; offsetListPos < offsetListNodeCount; offsetListPos++) {
 						topicName = resultsArrayNode.get(resultPos).get("topic").asText();
 			%>
-			<tr>
+			<tr <%=bgcolor%>>
 				<td>
 					<%  if(offsetListPos == 0) {%>
 					<a href="<%=baseUrl%>&viewtype=topic&id=<%=topicName%>" style="text-decoration:none;color:black;">
@@ -254,26 +260,32 @@ table.GeneratedTable3 thead {
 				<td align="center">Replicas</td>
 			</tr>
 			<%
+				String bgcolor = "";
 				JsonNode offsetListNode = null;
 				for (int resultPos = 0; resultPos < resultsCount; resultPos++) {
 					offsetListNode = resultsArrayNode.get(resultPos).path("offsetList");
 					int offsetListNodeCount = offsetListNode.size();
-
+					bgcolor = (resultPos%2 == 1)?	"bgcolor='#F0F0F0'":"";
+					
 					String groupID = null;
 					for (int offsetListPos = 0; offsetListPos < offsetListNodeCount; offsetListPos++) {
 						long lag = offsetListNode.get(offsetListPos).get("lag").asLong();
+						String lagString = "";
 						String tdColor = "";
 						if(lag < 0) {
-							tdColor = "style='color:#888888'";
+							tdColor = "style='color:#909090'";
+							lagString = "STOPPED";
+						} else {
+							lagString = String.format("%,10d", offsetListNode.get(offsetListPos).get("lag").asLong());
 						}
 									
 						groupID = resultsArrayNode.get(resultPos).get("groupID").asText();
 			%>
-			<tr>
+			<tr <%=bgcolor%>>
 				<td <%=tdColor%> ><%=(offsetListPos == 0)? resultsArrayNode.get(resultPos).get("topic").asText():""%></td>
 				<td <%=tdColor%> >
 					<%  if(tdColor.length() == 0) {%>
-					<a href="<%=baseUrl%>&viewtype=consumer&id=<%=groupID%>" style="text-decoration:none;color:black;">
+					<a href="<%=baseUrl%>&viewtype=report&id=<%=groupID%>" style="text-decoration:none;color:black;">
 						<%=groupID%>
 					</a>
 					<%  } else { %>
@@ -284,7 +296,7 @@ table.GeneratedTable3 thead {
 				<td align="center" <%=tdColor%> ><%=offsetListNode.get(offsetListPos).get("host").asText()%></td>
 				<td align="right" <%=tdColor%> ><%=String.format("%,10d", offsetListNode.get(offsetListPos).get("endOffset").asLong())%></td>
 				<td align="right" <%=tdColor%> ><%=String.format("%,10d", offsetListNode.get(offsetListPos).get("committedOffset").asLong())%></td>
-				<td align="right" <%=tdColor%> ><%=String.format("%,10d", offsetListNode.get(offsetListPos).get("lag").asLong())%></td>
+				<td align="right" <%=tdColor%> ><%=lagString%></td>
 				<td align="center" <%=tdColor%> ><%=offsetListNode.get(offsetListPos).get("leader").asText()%></td>
 				<td align="center" <%=tdColor%> ><%=offsetListNode.get(offsetListPos).get("replicas").asText()%></td>
 			</tr>
@@ -296,11 +308,76 @@ table.GeneratedTable3 thead {
 	</table>
 
 	<%
-					} // else if(!hasGroupID)
+						} // else if(!hasGroupID)
 
-				} else { // if (resultsCount > 0)
-					out.write("<p>" + jsonString);
-					//logger.warn("Result is 0 : " + jsonString);
+					} else { // if (resultsCount > 0)
+						out.write("<p>" + jsonString);
+						//logger.warn("Result is 0 : " + jsonString);
+					}
+				} else { // if(hasReportNode != null)
+%>					
+	<table class="GeneratedTable2">
+		<tbody>
+		    <tr>
+				<td colspan="12">Consumer Lag &nbsp;&nbsp;[ <%= df.format(System.currentTimeMillis())%> ]</td>
+			</tr>
+			<tr>
+				<td width="36%" align="center">Consumer</td>
+				<td width="4%" align="center">Partition</td>
+				<td width="6%" align="center">T</td>
+				<td width="6%" align="center">T+<%= refreshSec %></td>
+				<td width="6%" align="center">T+<%= refreshSec*2 %></td>
+				<td width="6%" align="center">T+<%= refreshSec*3 %></td>
+				<td width="6%" align="center">T+<%= refreshSec*4 %></td>
+				<td width="6%" align="center">T+<%= refreshSec*5 %></td>
+				<td width="6%" align="center">T+<%= refreshSec*6 %></td>
+				<td width="6%" align="center">T+<%= refreshSec*7 %></td>
+				<td width="6%" align="center">T+<%= refreshSec*8 %></td>
+				<td width="6%" align="center">T+<%= refreshSec*9 %></td>
+			</tr>					
+<% 
+					JsonNode resultsArrayNode = jsonNode.path("results");
+					int resultsCount = resultsArrayNode.size();
+
+					if (resultsCount > 0) {
+						JsonNode offsetListNode = null;
+						String bgcolor = "";
+						for (int resultPos = 0; resultPos < resultsCount; resultPos++) {
+							String tdColor = "";
+							bgcolor = (resultPos%2 == 1)?	"bgcolor='#F0F0F0'":"";
+						
+							
+%>
+
+			<tr <%=bgcolor%>>
+				<td <%=tdColor%> ><%=resultsArrayNode.get(resultPos).get("groupID").asText()%></td>
+				<td align="center" <%=tdColor%> ><%=resultsArrayNode.get(resultPos).get("partition").asInt()%></td>
+<%
+							offsetListNode = resultsArrayNode.get(resultPos).path("offsets");
+							int offsetListNodeCount = offsetListNode.size();
+							
+							String lag = null;
+							for (int offsetListPos = 0; offsetListPos < 10; offsetListPos++) {
+								if(offsetListPos < offsetListNodeCount) {
+									lag = String.format("%,10d", offsetListNode.get(offsetListPos).get("lag").asLong());
+								} else {
+									lag = "-";
+								}
+%>								
+				<td align="right" <%=tdColor%> ><%=lag %></td>
+<%								
+							}
+%>
+			</tr>	
+<%								
+						}
+					}
+%>			
+		</tbody>
+	</table>					
+					
+					
+<%					
 				}
 			} else {
 				if (viewTypeParam != null) {
@@ -324,7 +401,7 @@ table.GeneratedTable3 thead {
 			urlString.append("/");
 			urlString.append(id);
 		}
-		
+		logger.warn("makeCallUrl={}", urlString.toString());
 		return urlString.toString();
 	}
 %>
