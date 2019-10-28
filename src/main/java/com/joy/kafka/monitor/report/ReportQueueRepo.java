@@ -2,6 +2,7 @@ package com.joy.kafka.monitor.report;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,7 @@ public class ReportQueueRepo {
 
 	protected Map<String, Map<String, Map<Integer, ReportQueue>>> addOffsetQueueMap(String clientID, String groupID, int partition, ReportQueue offsetQueue) {
 		if (offsetQueueMap.get(clientID) == null) {
-			Map<Integer, ReportQueue> partitionMap = new HashMap<Integer, ReportQueue>();
+			Map<Integer, ReportQueue> partitionMap = new TreeMap<Integer, ReportQueue>();
 			partitionMap.put(partition, offsetQueue);
 			
 			Map<String, Map<Integer, ReportQueue>> groupIDMap = new HashMap<String, Map<Integer, ReportQueue>>();
@@ -30,7 +31,7 @@ public class ReportQueueRepo {
 			offsetQueueMap.put(clientID, groupIDMap);
 			
 		} else if (offsetQueueMap.get(clientID).get(groupID) == null) {
-			Map<Integer, ReportQueue> partitionMap = new HashMap<Integer, ReportQueue>();
+			Map<Integer, ReportQueue> partitionMap = new TreeMap<Integer, ReportQueue>();
 			partitionMap.put(partition, offsetQueue);
 			
 			offsetQueueMap.get(clientID).put(groupID, partitionMap);

@@ -11,6 +11,7 @@ import org.apache.kafka.common.PartitionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.joy.kafka.monitor.config.ViewType;
 import com.joy.kafka.monitor.handler.vo.ConsumerGroupVO;
 import com.joy.kafka.monitor.rest.vo.MonitorResponseVO;
 import com.joy.kafka.monitor.util.ViewColumnType;
@@ -58,7 +59,7 @@ public class MonitorHandlerTest {
 	public void testGetConsumerListOffsetsByDeploy() {
 		String deploy = "TABLEUSERDATA"; // HCS_TEST , TABLEUSERDATA
 		
-		MonitorResponseVO vo = new MonitorResponseVO(consumerMonitor.getConsumerListOffsetsByDeploy(deploy));
+		MonitorResponseVO vo = new MonitorResponseVO(ViewType.Deploy, consumerMonitor.getConsumerListOffsetsByDeploy(deploy));
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByConsumerOffsetList(vo.getResults()));
 	}
@@ -80,7 +81,7 @@ public class MonitorHandlerTest {
 	}
 	
 	public void testGetConsumerOffsetList() {
-		MonitorResponseVO vo = new MonitorResponseVO(consumerMonitor.getConsumerListOffsets());
+		MonitorResponseVO vo = new MonitorResponseVO(ViewType.Consumer, consumerMonitor.getConsumerListOffsets());
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByConsumerOffsetList(vo.getResults()));
 	}
@@ -103,7 +104,7 @@ public class MonitorHandlerTest {
 		//String groupID = "groupID-IGNITE_TEST-DE1559267912-ENT6787-MEMORYGRID";
 		//logger.debug("> topicName : {}", monitor.getTopicNamebyGroupID(groupID));
 		
-		MonitorResponseVO vo = new MonitorResponseVO(topicMonitor.getTopicOffsets());
+		MonitorResponseVO vo = new MonitorResponseVO(ViewType.Topic, topicMonitor.getTopicOffsets());
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByTopicOffsetList(vo.getResults()));
 	}

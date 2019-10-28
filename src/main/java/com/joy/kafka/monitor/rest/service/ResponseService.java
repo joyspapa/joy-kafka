@@ -13,6 +13,7 @@ import com.joy.kafka.monitor.handler.vo.ConsumerGroupVO;
 import com.joy.kafka.monitor.report.ReportHandler;
 import com.joy.kafka.monitor.rest.vo.MonitorResponseVO;
 import com.joy.kafka.monitor.rest.vo.ReportResponseVO;
+import com.joy.kafka.monitor.rest.vo.ResponseVO;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
@@ -26,7 +27,7 @@ public class ResponseService extends AbstractVerticle {
 			try {
 				String clientip = message.body().getString("clientip");
 				ViewType viewtype = ViewType.findViewType(message.body().getString("viewtype"));
-				String id = message.body().getString("id");
+				String id = (message.body().getString("id") == null)? "none":message.body().getString("id");
 				String responseString = "";
 				
 				if(viewtype != ViewType.Report) {
@@ -39,39 +40,46 @@ public class ResponseService extends AbstractVerticle {
 						List<ConsumerGroupVO> list = new ArrayList<ConsumerGroupVO>();
 						list.add(new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerOffsets(id));
 						
-						responseString = new MonitorResponseVO(list).toString();
+						responseString = new MonitorResponseVO(viewtype, list).toString();
 					} else {
-						responseString = new MonitorResponseVO(new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerListOffsets())
+						responseString = new MonitorResponseVO(viewtype, new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerListOffsets())
 								.toString();
 					}
 					break;
 				case ConsumerAll:
-					responseString = new MonitorResponseVO(new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerListOffsets(true))
+					responseString = new MonitorResponseVO(viewtype, new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerListOffsets(true))
 							.toString();
 					break;
 				case Report:
-					responseString = new ReportResponseVO(new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerOffsetsReport(id))
+					responseString = new ReportResponseVO(viewtype, new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerOffsetsReport(id))
 							.toString();
 					break;
 				case Deploy:
 					if(!id.equals("none")) {
-						responseString = new MonitorResponseVO(new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerListOffsetsByDeploy(id))
+						responseString = new MonitorResponseVO(ViewType.ConsumerAll, new ConsumerMonitorHandler(clientip, Constant.brokers).getConsumerListOffsetsByDeploy(id))
 								.toString();
 					} else {
-						responseString = new MonitorResponseVO(new ConsumerMonitorHandler(clientip, Constant.brokers).getDeployList())
+						responseString = new MonitorResponseVO(viewtype, new ConsumerMonitorHandler(clientip, Constant.brokers).getDeployList())
 								.toString();
 					}
 					break;
-				default:
+				case Topic:
 					if(!id.equals("none")) {
 						List<ConsumerGroupVO> list = new ArrayList<ConsumerGroupVO>();
 						list.add(new TopicMonitorHandler(clientip, Constant.brokers).getTopicOffsets(id));
 						
-						responseString = new MonitorResponseVO(list).toString();
+						responseString = new MonitorResponseVO(viewtype, list).toString();
 					} else {
-						responseString = new MonitorResponseVO(new TopicMonitorHandler(clientip, Constant.brokers).getTopicOffsets())
+						responseString = new MonitorResponseVO(viewtype, new TopicMonitorHandler(clientip, Constant.brokers).getTopicOffsets())
 								.toString();
 					}
+					break;
+				default:
+					ResponseVO resVO = new ResponseVO(ViewType.None);
+					resVO.setSuccess(false);
+					resVO.setViewType("the viewType must be one of the following " + ViewType.values() + "!, Request viewType=" + message.body().getString("viewtype"));
+					responseString = resVO.toString();
+					
 					break;
 				}
 				

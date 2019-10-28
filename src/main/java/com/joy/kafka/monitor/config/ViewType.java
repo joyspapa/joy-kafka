@@ -5,6 +5,7 @@ public enum ViewType {
 	ConsumerAll    	("consumerAll"),
 	Report    		("report"),
 	Deploy    		("deploy"),
+	Topic    		("topic"),
 	None    		("none")
 	;
 	
@@ -19,6 +20,10 @@ public enum ViewType {
 	}
 	
 	public static ViewType findViewType(String viewType) {
+		if(viewType == null) {
+			return ViewType.None;
+		}
+		
 		for (ViewType view : ViewType.values()) {
 			if (view.name.equals(viewType)) {
 				return view;

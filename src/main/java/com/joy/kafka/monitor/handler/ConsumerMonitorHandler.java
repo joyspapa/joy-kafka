@@ -149,12 +149,13 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 		List<ConsumerGroupVO> consumerOffsetList = new ArrayList<ConsumerGroupVO>();
 
 		Map<String, Integer> deployMap = new HashMap<String, Integer>();
-
 		List<String> groupList = getConsumerList();
 		for (String groupID : groupList) {
-			deployMap.put(extractDeploy(groupID), 0);
+			groupID = extractDeploy(groupID);
+			if (groupID != null) {
+				deployMap.put(groupID, 0);
+			}
 		}
-
 		for (String deployName : deployMap.keySet()) {
 			ConsumerGroupVO consumerGroupVO = new ConsumerGroupVO();
 			consumerGroupVO.setCreateDT(DateTimeUtils.getNormalDate());
@@ -168,7 +169,12 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 
 	private String extractDeploy(String groupID) {
 		// 	groupID-HCS_TEST-DE1570154270-ENT3764-SP
-		return groupID.split("-")[1];
+		try {
+			return groupID.split("-")[1];
+		} catch (ArrayIndexOutOfBoundsException e) {
+			logger.warn("[extractDeploy] ArrayIndexOutOfBoundsException groupID={}", groupID);
+			return null;
+		}
 	}
 
 	/*
@@ -180,7 +186,6 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 		scala.collection.immutable.List<GroupOverview> groupAll = null;
 		try {
 			groupAll = KafkaAdminClientFactory.getAdminClient(getBrokers()).listAllGroupsFlattened();
-
 			scala.collection.Iterator<GroupOverview> iterator = groupAll.iterator();
 			String groupID = null;
 			while (iterator.hasNext()) {

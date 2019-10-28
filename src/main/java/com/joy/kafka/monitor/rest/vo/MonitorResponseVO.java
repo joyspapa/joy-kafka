@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import com.joy.kafka.monitor.config.ViewType;
 import com.joy.kafka.monitor.handler.vo.ConsumerGroupVO;
 
 public class MonitorResponseVO extends ResponseVO {
@@ -11,7 +12,8 @@ public class MonitorResponseVO extends ResponseVO {
 	private List<ConsumerGroupVO> results = new ArrayList<ConsumerGroupVO>();
 	private boolean hasGroupID = false;
 	
-	public MonitorResponseVO(List<ConsumerGroupVO> resultList) {
+	public MonitorResponseVO(ViewType viewType, List<ConsumerGroupVO> resultList) {
+		super(viewType);
 		this.results = resultList;
 		hasGroupID(resultList);
 	}
