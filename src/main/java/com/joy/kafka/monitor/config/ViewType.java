@@ -4,8 +4,10 @@ public enum ViewType {
 	Consumer     	("consumer"),
 	ConsumerAll    	("consumerAll"),
 	Report    		("report"),
+	ReportChart    	("reportChart"),
 	Deploy    		("deploy"),
 	Topic    		("topic"),
+	Admin    		("admin"),
 	None    		("none")
 	;
 	
