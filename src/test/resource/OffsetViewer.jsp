@@ -8,22 +8,37 @@
 <%!// 전역 변수 선언
 	final Logger logger = LoggerFactory.getLogger(getClass());
 
+	final String[] lineColor = {"#4169E1", "#6A5ACD", "#483D8B", "#48D1CC", "#4682B4", "#40E0D0" ,"#3CB371" ,"#5F9EA0" ,"#66CDAA" ,"#696969"};
 	String baseUrl = "";
-	final String synapseURL = "http://192.168.10.171:9081/kafka/monitor/";
+	final String synapseURL = "http://192.168.10.57:9081/kafka/";
+	String hostAddress = null;
 	final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	int refreshSec = 2;
 %>
 
 <%
+	//if(!(request.getRemoteAddr().startsWith("0"))) {
+	//	logger.warn("OffsetViewerNew Clinet-Addr : " + request.getLocalAddr());
+	//	logger.warn("OffsetViewerNew RemoteAddr : " + request.getRemoteAddr() + " , RemoteHost : " + request.getRemoteHost());
+	//}
+
+	if(hostAddress == null) {
+		hostAddress = InetAddress.getLocalHost().getHostAddress();
+		logger.warn("hostAddress is NULL");
+	}
 	StringBuilder sbBaseUrl = new StringBuilder();
 	sbBaseUrl.append("http://");
-	sbBaseUrl.append(InetAddress.getLocalHost().getHostAddress());
+	sbBaseUrl.append(hostAddress);
 	sbBaseUrl.append(":8080/logplanet-ui-admin/OffsetViewer.jsp");
-	//sbBaseUrl.append(request.getRemoteAddr());
-
-	//baseUrl = "http://" + InetAddress.getLocalHost().getHostAddress() +":8080/logplanet-ui-admin/Offset.jsp?clientip="+request.getRemoteAddr();
-
-	//int refreshSec = 2;
+	
+	String refreshParam = request.getParameter("refresh");
+	if (refreshParam != null && refreshParam.length() > 0) {
+		refreshSec = Integer.parseInt(refreshParam);
+	}
+	sbBaseUrl.append("?refresh=");
+	sbBaseUrl.append(refreshSec);
+	
+	
 	boolean isEarliest = false;
 	int kafkaTimeout = 0;
 	String includeTopic = "";
@@ -34,13 +49,19 @@
 	String viewTypeParam = request.getParameter("viewtype");
 	String idParam = request.getParameter("id");
 
-	String refreshParam = request.getParameter("refresh");
-	if (refreshParam != null && refreshParam.length() > 0) {
-		refreshSec = Integer.parseInt(refreshParam);
+	boolean isAdminView = false;
+	String refreshMeta = "";
+	if (viewTypeParam != null) {
+		if(!viewTypeParam.equals("admin")) {
+			// Rest 호출
+			jsonString = call("monitor", request.getRemoteAddr(), viewTypeParam, idParam);
+			
+			refreshMeta = "<meta http-equiv='refresh' content='" + refreshSec + "'>";
+		} else {
+			isAdminView = true;
+		}
 	}
-	sbBaseUrl.append("?refresh=");
-	sbBaseUrl.append(refreshSec);
-	
+
 	baseUrl = sbBaseUrl.toString();
 %>
 
@@ -48,13 +69,9 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<%
-	if (viewTypeParam != null) {
-		// Rest 호출
-		jsonString = call(request.getRemoteAddr(), viewTypeParam, idParam);
-		out.write("<meta http-equiv='refresh' content='" + refreshSec + "'>");
-	}
-%>
+
+<%=refreshMeta%>
+
 <title>Offset Viewer of KAFKA Topic</title>
 <!-- CSS Code: Place this code in the document's head (between the 'head' tags) -->
 <style>
@@ -103,7 +120,7 @@ table.GeneratedTable2 thead {
 }
 
 table.GeneratedTable3 {
-	width: 30%;
+	width: 40%;
 	background-color: #ffffff;
 	border-collapse: collapse;
 	border-width: 1px;
@@ -125,26 +142,17 @@ table.GeneratedTable3 thead {
 }
 </style>
 <!-- Request Condition : refresh=3&#38;ip=192.168.10.82&#38;port=9092&#38;timeout=3000&#38;earliest=false&#38;include=topicA,topicB-->
+<script src="./js/Chart.min.js"></script>
 </head>
 <body>
-	<h4>
-		<a href="<%=baseUrl%>" style="text-decoration: none">Offset Viewer</a>
-	</h4>
-	<h5>
-		<a href="<%=baseUrl%>&viewtype=topic" style="text-decoration: none">Topic 별 현황</a> 
-		&nbsp;&nbsp;&nbsp;&nbsp; 
-		<a href="<%=baseUrl%>&viewtype=consumer" style="text-decoration: none">ConsumerGroup 별 현황</a> 
-		(<a href="<%=baseUrl%>&viewtype=consumerAll" style="text-decoration: none">ALL</a>) 
-		&nbsp;&nbsp;&nbsp;&nbsp; 
-		<a href="<%=baseUrl%>&viewtype=deploy" style="text-decoration: none">Deploy 별 현황</a>
-	</h5>
-
 <%
+	out.write(makeMenuHtml(isAdminView, request.getRemoteAddr()));
+
 	// consumer | consumerAll | deploy | topic | report
 	if(jsonString != null) {
 		
 		JsonNode jsonNode = new ObjectMapper().readTree(jsonString);
-		if (jsonNode.get("success") != null && jsonNode.get("success").asBoolean()) {
+		if (jsonNode.get("success") != null && jsonNode.get("success").asBoolean() && jsonNode.path("results").size()>0) {
 
 			JsonNode resultsArrayNode = jsonNode.path("results");
 			switch (jsonNode.get("viewType").asText()) {
@@ -164,6 +172,10 @@ table.GeneratedTable3 thead {
 			case "report":
 				out.write(makeReportViewHtml(resultsArrayNode));
 				break;
+				
+			case "reportChart":
+				out.write(makeReportChartViewHtml(resultsArrayNode));
+				break;
 			}
 		} else {
 			out.write("<p>" + jsonString);	
@@ -176,6 +188,131 @@ table.GeneratedTable3 thead {
 </html>
 
 <%! // Make HTML 메소드 정의
+	public String makeMenuHtml(boolean isAdminView, String clientid) {
+		StringBuilder menuView = new StringBuilder();
+		menuView.append("<h3>");
+		menuView.append("<a href='" + baseUrl + "' style='text-decoration: none'>Offset Viewer</a>");
+		menuView.append("&nbsp;&nbsp;&nbsp;");
+		menuView.append("<font size='2'>(<a href='" + baseUrl + "&viewtype=admin' style='text-decoration: none'>Topic Management</a>)</font>");
+		menuView.append("</h3>");
+
+		if (!isAdminView) {
+			menuView.append("<h5>");
+			menuView.append("<a href='" + baseUrl + "&viewtype=topic' style='text-decoration: none'>Topic 별 현황</a>");
+			menuView.append("&nbsp;&nbsp;&nbsp;&nbsp;");
+			menuView.append("<a href='" + baseUrl + "&viewtype=consumer' style='text-decoration: none'>ConsumerGroup 별 현황</a>");
+			menuView.append("&nbsp;(<a href='" + baseUrl + "&viewtype=consumerAll' style='text-decoration: none'>ALL</a>)");
+			menuView.append("&nbsp;&nbsp;&nbsp;&nbsp;");
+			menuView.append("<a href='" + baseUrl + "&viewtype=deploy' style='text-decoration: none'>Deploy 별 현황</a>");
+			menuView.append("</h5>");
+		} else {
+			menuView.append(makeAdminHtml(clientid));
+		}
+
+		logger.warn("makeMenuHtml={}", menuView.toString());
+		return menuView.toString();
+	}
+
+	public String makeAdminHtml(String clientid) {
+		StringBuilder adminView = new StringBuilder();
+		adminView.append("<script>");
+		adminView.append("function callAdminAction (command)");
+		adminView.append("{");
+		
+		adminView.append("  var requestUrl = '" + makeCallUrl("admin" , clientid, null, null) +"';");
+		adminView.append("  if(command == 'create') {");
+		adminView.append("    document.getElementById(command).value=document.getElementById(command).value.toUpperCase();");
+		adminView.append("    var topic = document.getElementById(command).value;");
+		adminView.append("    var partition = document.adminForm.partition.value;");
+		adminView.append("    var replicaFactor = document.adminForm.replicaFactor.value;");
+		adminView.append("    if(topic.length == 0) {");
+		adminView.append("      alert('TopicName must be filled out:' + topic);");
+		adminView.append("      return false;");
+		adminView.append("    }");
+		adminView.append("    requestUrl = requestUrl + '/' + command + '/' + topic + '/' + partition + '/' + replicaFactor;");
+		adminView.append("  } else if(command != '') {");
+		adminView.append("    requestUrl = requestUrl + '/delete/' + command;");
+		adminView.append("  } else {");
+		adminView.append("    alert('command must be create or delete. :' + command);");
+		adminView.append("    return false;");
+		adminView.append("  }");
+		
+		adminView.append("  var xhr = new XMLHttpRequest();");
+		adminView.append("  xhr.open('GET', requestUrl, true);");
+		adminView.append("  xhr.send(null);");
+		adminView.append("  xhr.onreadystatechange=function(){");
+		adminView.append("    if(xhr.readyState == 4 && xhr.status == 200){");
+	    adminView.append("      var json = JSON.parse(xhr.responseText); ");
+	    adminView.append("      document.getElementById('actionResult').innerHTML = '<p>result : ' + json.message + ' (for confirmation, click the Topic_Management link)'");
+		adminView.append("    } else {");
+		adminView.append("      document.getElementById('actionResult').innerHTML = 'Failed status : ' + xhr.status + ', Contents : ' + xhr.responseText;");
+		adminView.append("    }");
+		adminView.append("  }");
+		adminView.append("}");
+		adminView.append("</script>");
+		
+		adminView.append("<form name='adminForm' >");
+		//adminView.append("<font style='font-family:courier;' >");
+		adminView.append("Topic 명 : <input type='text' name='topic-create' id='create' size='20' />&nbsp; &nbsp; ");
+		adminView.append("Partition : <input type='text' name='partition' value='1' size='2' />&nbsp; &nbsp;");
+		adminView.append("ReplicaFactor : <input type='text' name='replicaFactor' value='2' size='2' />&nbsp; &nbsp;");
+		adminView.append("<a href=\"javascript:callAdminAction('create')\">Topic 생성</a>");
+		adminView.append("<p>");
+		
+		///////////////////////
+		// Topic List View
+		String topicListJsonResult = call("admin", clientid, "list", "");
+		try {
+			JsonNode jsonNode = new ObjectMapper().readTree(topicListJsonResult);
+			//logger.warn("topicListJsonResult = {}", topicListJsonResult);
+			if (jsonNode.get("success") != null && jsonNode.get("success").asBoolean()) {
+				JsonNode listNode = jsonNode.path("listTopic");
+				adminView.append("<p>");
+				adminView.append("<table class='GeneratedTable3'>");
+				adminView.append("<tbody>");
+				adminView.append("<tr>");
+				adminView.append("<td align='center' colspan='2'>");
+				adminView.append("Topic 명");
+				adminView.append("</td>");
+				adminView.append("</tr>");
+			
+				String bgcolor = "";
+				for (short resultPos = 0; resultPos < listNode.size(); resultPos++) {
+					bgcolor = (resultPos % 2 == 1) ? "bgcolor='#F0F0F0'" : "";
+					adminView.append("<tr " + bgcolor + ">");
+					adminView.append("<td width='90%'>");
+					adminView.append(listNode.get(resultPos).asText());
+					adminView.append("</td>");
+					adminView.append("<td align='center' width='10%'>");
+					adminView.append("<a href=\"javascript:callAdminAction('" + listNode.get(resultPos).asText() + "')\">");
+					adminView.append("삭제");
+					adminView.append("</a>");
+					adminView.append("</td>");
+					adminView.append("</tr>");
+					//logger.warn("topicListJsonResult ({}) = {}",resultPos, listNode.get(resultPos).asText());
+				}
+			
+				adminView.append("</tbody>");
+				adminView.append("</table");
+			}
+		
+		} catch(Exception ex) {
+			logger.warn("topicListJsonResult error : ", ex);
+		}
+		// Topic List View
+		///////////////////////
+		
+		//adminView.append("</font>");
+		adminView.append("</form>");
+
+		adminView.append("<div><table><tr>");
+		adminView.append("<td id='actionResult'>");
+		adminView.append("</td></tr></table></div>");
+		
+		//logger.warn("makeAdminHtml={}", adminView.toString());
+		return adminView.toString();
+	}
+
 	public String makeDeployViewHtml(JsonNode resultNode) {
 		StringBuilder deployView = new StringBuilder();
 		deployView.append("<p>");
@@ -189,8 +326,7 @@ table.GeneratedTable3 thead {
 
 		String bgcolor = "";
 		String checkDeployName = "";
-		int resultsCount = resultNode.size();
-		for (int resultPos = 0; resultPos < resultsCount; resultPos++) {
+		for (short resultPos = 0; resultPos < resultNode.size(); resultPos++) {
 			bgcolor = (resultPos % 2 == 1) ? "bgcolor='#F0F0F0'" : "";
 			checkDeployName = resultNode.get(resultPos).get("deployName").asText();
 
@@ -205,9 +341,9 @@ table.GeneratedTable3 thead {
 		}
 
 		deployView.append("</tbody>");
-		deployView.append("</table");
+		deployView.append("</table>");
 
-		logger.warn("makeDeployViewHtml={}", deployView.toString());
+		//logger.warn("makeDeployViewHtml={}", deployView.toString());
 		return deployView.toString();
 	}
 
@@ -229,15 +365,13 @@ table.GeneratedTable3 thead {
 		topicView.append("</tr>");
 
 		String bgcolor = "";
-		int resultsCount = resultNode.size();
 		JsonNode offsetListNode = null;
-		for (int resultPos = 0; resultPos < resultsCount; resultPos++) {
+		for (short resultPos = 0; resultPos < resultNode.size(); resultPos++) {
 			offsetListNode = resultNode.get(resultPos).path("offsetList");
-			int offsetListNodeCount = offsetListNode.size();
 			bgcolor = (resultPos % 2 == 1) ? "bgcolor='#F0F0F0'" : "";
 
 			String topicName = null;
-			for (int offsetListPos = 0; offsetListPos < offsetListNodeCount; offsetListPos++) {
+			for (short offsetListPos = 0; offsetListPos < offsetListNode.size(); offsetListPos++) {
 				topicName = resultNode.get(resultPos).get("topic").asText();
 
 				topicView.append("<tr " + bgcolor + ">");
@@ -267,7 +401,7 @@ table.GeneratedTable3 thead {
 		topicView.append("</tbody>");
 		topicView.append("</table>");
 
-		logger.warn("makeTopicViewHtml={}", topicView.toString());
+		//logger.warn("makeTopicViewHtml={}", topicView.toString());
 		return topicView.toString();
 	}
 
@@ -293,15 +427,13 @@ table.GeneratedTable3 thead {
 		consumerView.append("</tr>");
 
 		String bgcolor = "";
-		int resultsCount = resultNode.size();
 		JsonNode offsetListNode = null;
-		for (int resultPos = 0; resultPos < resultsCount; resultPos++) {
+		for (short resultPos = 0; resultPos < resultNode.size(); resultPos++) {
 			offsetListNode = resultNode.get(resultPos).path("offsetList");
-			int offsetListNodeCount = offsetListNode.size();
 			bgcolor = (resultPos % 2 == 1) ? "bgcolor='#F0F0F0'" : "";
 
 			String groupID = null;
-			for (int offsetListPos = 0; offsetListPos < offsetListNodeCount; offsetListPos++) {
+			for (short offsetListPos = 0; offsetListPos < offsetListNode.size(); offsetListPos++) {
 				long lag = offsetListNode.get(offsetListPos).get("lag").asLong();
 				String lagString = "";
 				String tdColor = "";
@@ -353,13 +485,11 @@ table.GeneratedTable3 thead {
 		consumerView.append("</tbody>");
 		consumerView.append("</table>");
 
-		logger.warn("makeConsumerViewHtml={}", consumerView.toString());
+		//logger.warn("makeConsumerViewHtml={}", consumerView.toString());
 		return consumerView.toString();
 	}
 
 	public String makeReportViewHtml(JsonNode resultNode) {
-		//SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		//int refreshSec = 0;
 		StringBuilder reportView = new StringBuilder();
 
 		reportView.append("<p>");
@@ -384,72 +514,164 @@ table.GeneratedTable3 thead {
 		reportView.append("<td width='6%' align='center'>T+" + refreshSec * 9 + "</td>");
 		reportView.append("</tr>");
 
-		//JsonNode resultsArrayNode = jsonNode.path("results");
-		//int resultsCount = resultsArrayNode.size();
+		JsonNode offsetListNode = null;
+		String bgcolor = "";
+		for (short resultPos = 0; resultPos < resultNode.size(); resultPos++) {
+			String tdColor = "";
+			bgcolor = (resultPos % 2 == 1) ? "bgcolor='#F0F0F0'" : "";
 
-		int resultsCount = resultNode.size();
-		//JsonNode offsetListNode = null;
-
-		if (resultsCount > 0) {
-			JsonNode offsetListNode = null;
-			String bgcolor = "";
-			for (int resultPos = 0; resultPos < resultsCount; resultPos++) {
-				String tdColor = "";
-				bgcolor = (resultPos % 2 == 1) ? "bgcolor='#F0F0F0'" : "";
-
-				reportView.append("<tr " + bgcolor + ">");
-				reportView
-						.append("<td " + tdColor + " >" + resultNode.get(resultPos).get("groupID").asText() + "</td>");
-				reportView.append("<td align='center' " + tdColor + " >"
-						+ resultNode.get(resultPos).get("partition").asInt() + "</td>");
-
-				offsetListNode = resultNode.get(resultPos).path("offsets");
-				int offsetListNodeCount = offsetListNode.size();
-
-				String lag = null;
-				for (int offsetListPos = 0; offsetListPos < 10; offsetListPos++) {
-					if (offsetListPos < offsetListNodeCount) {
-						lag = String.format("%,10d", offsetListNode.get(offsetListPos).get("lag").asLong());
-					} else {
-						lag = "-";
-					}
-
-					reportView.append("<td align='right' " + tdColor + " >" + lag + "</td>");
-
+			reportView.append("<tr " + bgcolor + ">");
+			reportView.append("<td " + tdColor + " >" );
+			reportView.append("<a href='" + baseUrl + "&viewtype=reportChart&id=" + resultNode.get(resultPos).get("groupID").asText()
+					+ "' style='text-decoration:none;color:black;'>");
+			reportView.append(resultNode.get(resultPos).get("groupID").asText() + " (chart)");
+			reportView.append("</a>");
+			reportView.append("</td>");
+			reportView.append("<td align='center' " + tdColor + " >"
+					+ resultNode.get(resultPos).get("partition").asInt() + "</td>");
+				
+			offsetListNode = resultNode.get(resultPos).path("offsets");
+			String lag = null;
+			for (short offsetListPos = 0; offsetListPos < 10; offsetListPos++) {
+				if (offsetListPos < offsetListNode.size()) {
+					lag = String.format("%,10d", offsetListNode.get(offsetListPos).get("lag").asLong());
+				} else {
+					lag = "-";
 				}
-				reportView.append("</tr>");
 
+				reportView.append("<td align='right' " + tdColor + " >" + lag + "</td>");
 			}
+			reportView.append("</tr>");
+
 		}
 
 		reportView.append("</tbody>");
 		reportView.append("</table>");
 
-		logger.warn("makeReportViewHtml={}", reportView.toString());
+		//logger.warn("makeReportViewHtml={}", reportView.toString());
 		return reportView.toString();
-	}%>
+	}
+
+	public String makeReportChartViewHtml(JsonNode resultNode) {
+		StringBuilder reportChartView = new StringBuilder();
+
+		short queueSize = 10;
+			
+		reportChartView.append("<div id='container' style='width: 40%; height: 30%;'>");
+		reportChartView.append("<canvas id='offsetChart'></canvas>");
+		reportChartView.append("</div>");
+			
+		reportChartView.append("<script>");
+			
+		reportChartView.append("var offsetCanvas = document.getElementById('offsetChart');");
+		reportChartView.append("Chart.defaults.global.defaultFontFamily = 'Lato';");
+		reportChartView.append("Chart.defaults.global.defaultFontSize = 10;");
+		reportChartView.append("Chart.defaults.global.title.display = true;");
+		reportChartView.append("Chart.defaults.global.title.position = 'bottom';");
+		reportChartView.append("Chart.defaults.global.title.fontSize = 14;");
+		reportChartView.append("Chart.defaults.global.title.text = 'Consumer Lag';");
+		//reportChartView.append("Chart.defaults.global.animation.duration = 0;");
+			
+		String[] xDataVar = new String[resultNode.size()];
+		JsonNode offsetListNode = null;
+		for (short resultPos = 0; resultPos < resultNode.size(); resultPos++) {
+			String yDataVar = "offsetData" + resultPos;
+			xDataVar[resultPos] = yDataVar;
+				
+			reportChartView.append("var " + yDataVar + "={");
+			reportChartView.append("label: '" + resultNode.path(resultPos).get("groupID").asText() + "-" + resultNode.path(resultPos).get("partition").asInt() + "',");
+				
+			reportChartView.append("data: [");
+			offsetListNode = resultNode.get(resultPos).path("offsets");
+			
+			int lag = 0;
+			for (short offsetListPos = 0; offsetListPos < queueSize; offsetListPos++) {
+				if (offsetListPos < offsetListNode.size()) {
+					lag = (int)offsetListNode.get(offsetListPos).get("lag").asLong();
+				} else {
+					lag = 0;
+				}
+				reportChartView.append(lag);
+				if(offsetListPos < (queueSize-1)) {
+					reportChartView.append(",");
+				}
+			}
+			reportChartView.append("],");
+			reportChartView.append("lineTension: 0,");
+			reportChartView.append("fill: false,");
+			reportChartView.append("borderColor: '" + lineColor[resultPos] + "'");
+			reportChartView.append("};");
+		}
+			
+		reportChartView.append("var xData={");
+		reportChartView.append("labels: [");
+		for(short qCnt = 0; qCnt < queueSize; qCnt++) {
+			// >T+" + refreshSec * 2 + "
+			if(qCnt == 0) {
+				reportChartView.append("'T'");
+			} else {
+				reportChartView.append("'T+"+ refreshSec * qCnt +"'");
+			}
+			if(qCnt < (queueSize-1)) {
+				reportChartView.append(",");
+			}
+		}
+		reportChartView.append("],");
+			
+		reportChartView.append("datasets: [");
+		for(short i = 0; i < xDataVar.length; i++) {
+			reportChartView.append(xDataVar[i]);
+			if(i < (xDataVar.length-1)) {
+				reportChartView.append(",");
+			}
+		}
+		reportChartView.append("]");
+		reportChartView.append("};");
+			
+		reportChartView.append("var chartOptions = {");
+		reportChartView.append("scales: { yAxes: [{ ticks: { beginAtZero: true } }] }");
+		reportChartView.append("};");
+			
+		reportChartView.append("var lineChart = new Chart(offsetCanvas, {");
+		reportChartView.append("type: 'line',");
+		reportChartView.append("data: xData,");
+		reportChartView.append("options: chartOptions");
+		reportChartView.append("});");
+			
+		reportChartView.append("</script>");
+
+		//logger.warn("makeReportChartViewHtml={}", reportChartView.toString());
+		return reportChartView.toString();
+	}
+	
+%>
 
 <%!// 메소드 정의
-	public String makeCallUrl(String clientid, String viewType, String id) {
+	public String makeCallUrl(String gubun, String clientid, String viewType, String id) {
 		StringBuilder urlString = new StringBuilder();
 		urlString.append(synapseURL);
-		urlString.append(clientid);
+		urlString.append(gubun);
 		urlString.append("/");
-		urlString.append(viewType);
-		if (id != null) {
+		urlString.append(clientid);
+		
+		if(viewType != null && viewType.length() > 0) {
+			urlString.append("/");
+			urlString.append(viewType);
+		}
+		if (id != null && id.length() > 0) {
 			urlString.append("/");
 			urlString.append(id);
 		}
-		logger.warn("makeCallUrl={}", urlString.toString());
+		//logger.warn("makeCallUrl={}", urlString.toString());
 		return urlString.toString();
 	}
 
-	public String call(String clientid, String viewType, String id) {
+	public String call(String gubun, String clientid, String viewType, String id) {
 		String responseBody = "";
 		HttpURLConnection connection = null;
 		try {
 
-			URL url = new URL(makeCallUrl(clientid, viewType, (id == null) ? "none" : id));
+			URL url = new URL(makeCallUrl(gubun, clientid, viewType, (id == null) ? "none" : id));
 			connection = (HttpURLConnection) url.openConnection();
 			connection.setConnectTimeout(2000);
 			connection.setRequestMethod("GET");

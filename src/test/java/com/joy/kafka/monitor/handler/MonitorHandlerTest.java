@@ -32,7 +32,7 @@ public class MonitorHandlerTest {
 		topicMonitor = new TopicMonitorHandler("localhost", brokers);
 		
 		MonitorHandlerTest test = new MonitorHandlerTest();
-		test.testGetDeployList();
+		//test.testGetDeployList();
 		
 		//test.testGetConsumerListOffsetsByDeploy();
 		
@@ -44,7 +44,7 @@ public class MonitorHandlerTest {
 
 		//test.testGetPartitionInfo();
 		
-		//test.testGetConsumerOffsetList();
+		test.testGetConsumerOffsetList();
 		
 		//test.testGetOffsetListByTopic();
 	}

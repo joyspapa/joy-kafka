@@ -32,7 +32,8 @@ public class ResponseService extends AbstractVerticle {
 	}
 	
 	private void monitorService() {
-		vertx.eventBus().<JsonObject> consumer(Constant.bus_kafka_monitor, message -> {
+		vertx.eventBus().<JsonObject> consumer(Constant.bus_kafka_monitor, message -> 
+		{
 			String responseString = null;
 			try {
 				String clientIp = message.body().getString("clientIp");
@@ -105,7 +106,8 @@ public class ResponseService extends AbstractVerticle {
 	}
 	
 	private void adminService() {
-		vertx.eventBus().<JsonObject> consumer(Constant.bus_kafka_admin, message -> {
+		vertx.eventBus().<JsonObject> consumer(Constant.bus_kafka_admin, message -> 
+		{
 			AdminResponseVO resVO = new AdminResponseVO(ViewType.Admin);
 			try {
 				//String clientip = message.body().getString("clientip");

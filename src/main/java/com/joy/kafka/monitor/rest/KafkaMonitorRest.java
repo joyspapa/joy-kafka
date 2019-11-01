@@ -11,6 +11,7 @@ import com.joy.kafka.monitor.rest.service.ResponseService;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Launcher;
 
 public class KafkaMonitorRest extends AbstractVerticle {
@@ -21,22 +22,30 @@ public class KafkaMonitorRest extends AbstractVerticle {
 	}
 
 	@Override
-	public void start() {
+	public void start(Future<Void> startFuture) {
 		// =================================
 		// 서비스 전 처리
 		preProcess();
 		
-		vertx.deployVerticle(new RequestService());
+		vertx.deployVerticle(new RequestService(), asyncResult -> 
+		{
+			if (asyncResult.succeeded()) {
+				logger.info("[start] Startup tasks are now complete, RequestService is now started!");
+				startFuture.complete();
+			} else {
+				startFuture.fail(asyncResult.cause());
+			}
+		});
 		
-		vertx.deployVerticle(new ResponseService(), getWorkerDeploymentOptions(), stringAsyncResult ->
-        {
-            logger.info("ResponseService deployed.");
-
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-    			KafkaConsumerFactory.closeKafkaConsumer();
-    			KafkaAdminClientFactory.closeAdminClient();
-    		}));
-        });
+		vertx.deployVerticle(new ResponseService(), getWorkerDeploymentOptions(), asyncResult -> 
+		{
+			if (asyncResult.succeeded()) {
+				logger.info("[start] Startup tasks are now complete, ResponseService is now started!");
+				startFuture.complete();
+			} else {
+				startFuture.fail(asyncResult.cause());
+			}
+		});
 	}
 
 	private DeploymentOptions getWorkerDeploymentOptions() {
@@ -50,23 +59,37 @@ public class KafkaMonitorRest extends AbstractVerticle {
 	}
 
 	private void preProcess() {
-		logger.info("[KafkaMonitor-rest::start] pre-processing starting...");
+		logger.info("[start] pre-processing starting...");
 
 		try {
 			logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-			logger.info("[KafkaMonitor-rest::start] Rest port 확인...");
+			logger.info("[start] Rest port 확인...");
 			if (ConfigHelper.getPort() == -1) {
-				logger.error("[KafkaMonitor-rest::start] Failed !, invalid port : {} ", ConfigHelper.getPort());
+				logger.error("[start] Failed !, invalid port : {} ", ConfigHelper.getPort());
 				System.exit(1);
 			}
 			logger.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-			logger.info("[KafkaMonitor-rest::start] pre-processing finished !");
+			logger.info("[start] pre-processing finished !\n");
 
 		} catch (Throwable th) {
-			logger.error("[KafkaMonitor-rest::start] Failed !, ", th);
+			logger.error("[start] Failed !, ", th);
 			th.printStackTrace();
 			System.exit(1);
 		}
+	}
+	
+	@Override
+	public void stop(Future<Void> stopFuture) throws Exception {
+		// If you have slow cleanup tasks to perform, you can similarly override the async stop method
+		logger.info("[stop] Vertx Http server stopping...");
 
+		//===================================
+		// TODO stopping process
+		KafkaConsumerFactory.closeKafkaConsumer();
+		KafkaAdminClientFactory.closeAdminClient();
+
+		super.stop(stopFuture);
+
+		logger.info("[stop] Vertx Http server is now stopped!");
 	}
 }
