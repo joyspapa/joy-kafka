@@ -194,7 +194,7 @@ public class ConsumerMonitorHandler extends MonitorHandler {
 			}
 			//logger.info("groupAll : {}", groupAll);
 		} catch (Throwable ex) {
-			if (ex instanceof RuntimeException) {
+			if (ex instanceof RuntimeException || ex instanceof NoClassDefFoundError) {
 				KafkaAdminClientFactory.closeAdminClient();
 				logger.warn("getConsumerList KafkaAdmin Connection warn : ex.getMessage()={}", ex.getMessage());
 			}
