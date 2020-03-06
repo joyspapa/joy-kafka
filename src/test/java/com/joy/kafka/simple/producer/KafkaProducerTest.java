@@ -15,6 +15,7 @@ public class KafkaProducerTest {
 
 	private static final Logger logger = LoggerFactory.getLogger(KafkaProducerTest.class);
 	DateFormat nanoDf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+	DateFormat nanoDfHNT = new SimpleDateFormat("yyyyMMddHHmmssSSSSS");
 	DateFormat nanoDfCJO = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 	KafkaProducer<Void, String> producer;
 
@@ -30,7 +31,9 @@ public class KafkaProducerTest {
 		
 		//logGenerator.testHcs_Esp01();
 		
-		logGenerator.testCJO_Esp01();
+		//logGenerator.testCJO_Esp01();
+		
+		logGenerator.testHNT_Esp01();
 	}
 
 	private Properties getKafkaProperties(String brokerHosts) {
@@ -48,7 +51,7 @@ public class KafkaProducerTest {
 	private void testCJO_Esp01() {
 		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.87:9092,192.168.10.88:9092,192.168.10.89:9092"));
 		String topic = "CLICK_MOBILE_WEB-IN-TOPIC";
-		//topic = "CORE-LOG-IN-TOPIC";
+		topic = "STT-DEPLOY-IN-TOPIC";
 		int bulkSize = 1;
 
 		String message = "";
@@ -59,12 +62,7 @@ public class KafkaProducerTest {
 		for (int i = 1; i <= bulkSize; i++) {
 
 			int key = roundRandom.nextInt(100) + 1;
-			if (bulkSize == 1 || i % 100 == 0) {
-				key = 39101930;
-			} else if (i % 150 == 0) {
-				key = 39101929;
-			}
-			
+			key = i;
 			message = makeMessageCJO(key, "-", "-", "-", "-");
 			
 			producer.send(new ProducerRecord<>(topic, message));
@@ -84,6 +82,12 @@ public class KafkaProducerTest {
 					e.printStackTrace();
 				}
 			}
+			
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
 		logger.info("# Elapsed Time : " + (System.currentTimeMillis() - startTime) + " ms");
@@ -91,7 +95,7 @@ public class KafkaProducerTest {
 		producer.close();
 	}
 	
-	private String makeMessageCJO(int key, String ec, String ea, String el, String cd1) {
+	private String makeMessageCJO_original(int key, String ec, String ea, String el, String cd1) {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(nanoDfCJO.format(new Date(System.currentTimeMillis())));
@@ -113,12 +117,34 @@ public class KafkaProducerTest {
 		return sb.toString();
 	}
 	
+	private String makeMessageCJO(int key, String ec, String ea, String el, String cd1) {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(nanoDfCJO.format(new Date(System.currentTimeMillis())));
+		sb.append(", ");
+		sb.append("CLIENT_IP=\"211.176.135.22\", UID=\"00NVOF35jgK3xwkgqT11495903433317\", SID=\"U0b2f3e9168c85c414648df9449e63fef76a11527309431" +key + "\",");
+		sb.append(" WEB_CATE_L_CD=\"G00040\", WEB_CATE_G_CD=\"G00007\", REF_PG=\"http://www.todayfortune.co.kr/bbs/search.php?stx=서광맥스3단접이식매트리스^M&s=&ptime=&where=naver\",");
+		sb.append(" CUST_EMPL_FL=\"N\", PRD_TP=\"NML\", INFL_GRP_CD=\"G0001\", INFL_CD=\"I0619\", CLICK_CD=\"DTAI____buy__buy__\",");
+		sb.append(" MD_CD=\"1394\", WEB_CATE_S_CD=\"G01688\", CUR_PG_NM=\"Oshopping Smart - CJmall\", CHN_CD=\"C\", STD_CATE_CD=\"30040205\",");
+		sb.append(" WEB_CATE_M_CD=\"G00276\", BRAND_CD=\"B\", PRD_CD=\"35674923\", PARTNER_CD=\"411891\", APP_CD=\"A\", PRD_NM=\"4단 접이식 매트리스 소파베드싱글\",");
+
+		sb.append(" CUR_PG=\"http://display.cjmall.com/m/item/35674923\", DEVICE_SCR_SIZE=\"360x640\", CLICK_DEPTH5=\"buy\", CLICK_DEPTH7=\"buy\",");
+		sb.append(" CLICK_DEPTH1=\"DTAI\", FID=\"RCzpH0k0g1JCe7Yx2b11517847291007\", USERAGENT=\"Mozilla/5.0 (Linux; Android 7.0; SM-A520S Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Crosswalk/20.50.533.51 Mobile Safari/537.36 NAVER(inapp; search; 590; 8.7.3)\",");
+
+		sb.append(" VISIT_LOGIN_FL=\"N\", REF_URL_DOMAIN=\"www.todayfortune.co.kr\", REF_URL_DOMAIN_TP=\"www\", REF_URL_CHN_TP=\"o\", REF_FILE=\"/bbs\",");
+		sb.append(" CUR_PG_INFO1=\"/item\", BROWSER_TP=\"Crosswalk\", BROWSER_VER=\"20.50.533\", OS=\"Android\", OS_VER=\"7.0\",");
+		sb.append(" MOBILE_DEVICE_BRAND_NM=\"Samsung\", MOBILE_DEVICE_MODEL_CD=\"SM-A520S\", SRC_CHN_TP=\"MW\"");
+		
+		logger.debug(sb.toString());
+		return sb.toString();
+	}
+	
 	private void testHcs_Esp01() {
 		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.82:9092,192.168.10.83:9092,192.168.10.84:9092"));
 		String topic = "HC-IN-TOPIC";
 		//topic = "CORE-LOG-IN-TOPIC";
 		
-		int bulkSize = 1;
+		int bulkSize = 3;
 
 		String message = "";
 		Random roundRandom = new Random();
@@ -143,7 +169,67 @@ public class KafkaProducerTest {
 			
 			producer.send(new ProducerRecord<>(topic, message));
 			
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			if (i % 30000 == 0) {
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				message = makeMessage(key, "MW_신용대출_DL", "한도조회", "나가기");
+			} else if (i % 1000 == 0) {
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		logger.info("# Elapsed Time : " + (System.currentTimeMillis() - startTime) + " ms");
+		producer.flush();
+		producer.close();
+	}
+	
+	private void testHNT_Esp01() {
+		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.82:9092,192.168.10.83:9092,192.168.10.84:9092"));
+		String topic = "TIMESTAMP-TEST-IN-TOPIC";
+		//topic = "CORE-LOG-IN-TOPIC";
+		
+		int bulkSize = 1;
+
+		String message = "";
+		Random roundRandom = new Random();
+
+		String uidPrefix = "C00000";
+		long startTime = System.currentTimeMillis();
+		for (int i = 1; i <= bulkSize; i++) {
+
+			int key = roundRandom.nextInt(100) + 1;
+			if (bulkSize == 1 || i % 100 == 0) {
+				key = 39101930;
+			} else if (i % 150 == 0) {
+				key = 39101929;
+			}
 			
+			message = makeMessageHNT(key, "MW_신용대출_DL", "한도 및 금리 확인", "한도조회", "0001");
+			
+			//message = makeMessage(key, "MW_신용대출_DL", "한도조회", "나가기");
+			
+			//message = makeMessage(key, "a", "한도조회", "나가기");
+			//message = makeMessage(key, "d", "한도조회", "나가기");
+			
+			producer.send(new ProducerRecord<>(topic, message));
+			
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			if (i % 30000 == 0) {
 				try {
 					Thread.sleep(3000);
@@ -256,6 +342,28 @@ public class KafkaProducerTest {
 		return sb.toString();
 	}
 
+	private String makeMessageHNT(int key, String ec, String ea, String el, String cd1) {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("{\"evt_time\" : \"" + nanoDfHNT.format(new Date(System.nanoTime())));
+		sb.append(
+				"\",\"cid\" : \"" + key + "\",\"dl\" : \"http://www.naver.com\",\"ul\" : \"ko-KR\",\"de\" : \"windows-1252\",");
+		sb.append("\"dt\" : \"PageTitle\",\"dr\" : \"http://www.naver.com\",\"sd\" : 24,\"sr\" : \"1920x1080\",");
+		sb.append(
+				"\"vp\" : \"958x195\",\"cs\" : \"facebook\",\"cm\" : \"social\",\"cn\" : \"1월 프로모션\",\"ck\" : \"펠리세이드\",");
+		sb.append("\"cc\" : \"모델있음\",");
+		sb.append("\"uid\" : \"" + key + "\","); // "\"uid\" : \"" + uidPrefix + String.format("%03d", roundRandom.nextInt(499) + 1) +"\","
+
+		sb.append(
+				"\"event\" : {\"ec\" : \"" + ec + "\",\"ea\" : \"" + ea + "\",\"el\" : \"" + el + "\",\"ev\" : 2000},");
+		sb.append("\"dimension\" : {\"cd1\" : \"" + cd1 + "\",");
+
+		sb.append("\"cd2\" : \"OUT\",\"cd3\" : \"MAIN\",\"cd4\" : \"N\"},");
+		sb.append("\"metric\" : {\"cm1\" : 1,\"cm2\" : 2,\"cm3\" : 3,\"cm4\" : 4}}");
+
+		return sb.toString();
+	}
+	
 	private void testHcs() {
 
 		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.82:9092,192.168.10.83:9092,192.168.10.84:9092"));
