@@ -15,7 +15,7 @@ public class KafkaProducerTest {
 
 	private static final Logger logger = LoggerFactory.getLogger(KafkaProducerTest.class);
 	DateFormat nanoDf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-	DateFormat nanoDfHNT = new SimpleDateFormat("yyyyMMddHHmmssSSSSS");
+	DateFormat nanoDfHNT = new SimpleDateFormat("yyyyMMddHHmmssSSSSSS");
 	DateFormat nanoDfCJO = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 	KafkaProducer<Void, String> producer;
 
@@ -140,9 +140,9 @@ public class KafkaProducerTest {
 	}
 	
 	private void testHcs_Esp01() {
-		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.82:9092,192.168.10.83:9092,192.168.10.84:9092"));
-		String topic = "HC-IN-TOPIC";
-		//topic = "CORE-LOG-IN-TOPIC";
+		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.211:9092,192.168.10.212:9092,192.168.10.213:9092"));
+		String topic = "HC-LOG-IN-TOPIC";
+		//topic = "HC-LOG-IN-TOPIC";
 		
 		int bulkSize = 3;
 
@@ -196,9 +196,9 @@ public class KafkaProducerTest {
 	}
 	
 	private void testHNT_Esp01() {
-		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.82:9092,192.168.10.83:9092,192.168.10.84:9092"));
+		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.211:9092,192.168.10.212:9092,192.168.10.213:9092"));
 		String topic = "TIMESTAMP-TEST-IN-TOPIC";
-		//topic = "CORE-LOG-IN-TOPIC";
+		topic = "HC-LOG-IN-TOPIC";
 		
 		int bulkSize = 1;
 
