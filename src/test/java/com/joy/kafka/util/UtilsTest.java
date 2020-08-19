@@ -1,5 +1,6 @@
 package com.joy.kafka.util;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
@@ -21,6 +22,13 @@ public class UtilsTest {
 	String synapseURL = "http://192.168.10.57:9081/kafka/monitor/";
 	//String hostAddress = InetAddress.getLocalHost().getHostAddress();
 
+	@Test
+	public void testEncoding() throws UnsupportedEncodingException {
+		String s = "移댄��怨�由�";
+		String conv = new String(s.getBytes(), "ksc5601");
+		System.out.println(conv);
+	}
+	
 	@Test
 	public void testTeeMap() {
 		Map<Integer, String> tree = new TreeMap();

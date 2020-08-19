@@ -7,7 +7,6 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.Predicate;
 import org.junit.Test;
 
@@ -21,7 +20,7 @@ public class StreamTest {
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 		props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 		StreamsConfig config = new StreamsConfig(props);
-
+		/*
 		KStreamBuilder builder = new KStreamBuilder();
 		KStream<String, Integer> stream = builder.stream("my-input-topic");
 		stream.filter(new Predicate<String, Integer>() {
@@ -36,5 +35,6 @@ public class StreamTest {
 
 		KafkaStreams streams = new KafkaStreams(builder, config);
 		streams.start();
+		*/
 	}
 }

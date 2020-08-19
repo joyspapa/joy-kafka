@@ -1,9 +1,9 @@
 package com.joy.kafka.simple.consumer;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 
-import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class KafkaConsumerTest {
 	private static final Logger logger = LoggerFactory.getLogger(KafkaConsumerTest.class);
 
-	private Consumer<String, String> consumer;
+	private KafkaConsumer<String, String> consumer;
 	private boolean isRunning;
 	//private List<Tuple2<String, Integer>> kafkaHostPortList;
 
@@ -30,7 +30,7 @@ public class KafkaConsumerTest {
 		
 		isRunning = true;
 		while (isRunning) {
-			ConsumerRecords<String, String> consumerRecords = consumer.poll(2000);
+			ConsumerRecords<String, String> consumerRecords = consumer.poll(Duration.ofMillis(2000));
 			// 1000 is the time in milliseconds consumer will wait if no record is found at broker.
 			if (consumerRecords.count() == 0) {
 				noMessageFound++;
@@ -39,7 +39,7 @@ public class KafkaConsumerTest {
 					logger.warn("If no message found count is reached to threshold exit loop.");
 					break;
 				} else {
-					logger.debug(loopExitCount + " is the time in milliseconds consumer will wait if no record is found at broker.. count : " + noMessageFound);
+					//logger.debug(loopExitCount + " is the time in milliseconds consumer will wait if no record is found at broker.. count : " + noMessageFound);
 					continue;
 				}
 				
@@ -70,11 +70,11 @@ public class KafkaConsumerTest {
 		isRunning = false;
 	}
 
-	private Consumer<String, String> createConsumer() {
+	private KafkaConsumer<String, String> createConsumer() {
 		logger.debug("create consumer...");
 
 		Properties props = new Properties();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.10.82:9092,192.168.10.83:9092,192.168.10.84:9092");
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.10.57:9092,192.168.10.58:9092,192.168.10.59:9092");
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, "group-id_testKafkaConsumer");
 		props.put(ConsumerConfig.CLIENT_ID_CONFIG, "client-id_testKafkaConsumer");
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
@@ -84,7 +84,7 @@ public class KafkaConsumerTest {
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		
 		consumer = new KafkaConsumer<>(props);
-		consumer.subscribe(Collections.singletonList("HCS-LOG-IN-TOPIC"/*"TEST-IN-TOPIC"/*"CHJUNGLOG-IN-TOPIC"/*"STREAMS-TEST-IN-TOPIC"*/));
+		consumer.subscribe(Collections.singletonList("SSG-TRK-BASE-IN-TOPIC"/*"TEST-IN-TOPIC"/*"CHJUNGLOG-IN-TOPIC"/*"STREAMS-TEST-IN-TOPIC"*/));
 		
 		return consumer;
 

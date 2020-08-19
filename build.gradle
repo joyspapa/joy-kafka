@@ -17,8 +17,9 @@ allprojects {
 	}
 
 	ext {
-	    kafkaScalaVersion = '2.11'
-		kafkaClientVersion = '0.11.0.2'
+	    kafkaScalaVersion = '2.12'
+		//kafkaClientVersion = '0.11.0.2'
+		kafkaClientVersion = '2.4.1'
 		vertxVersion = '3.5.1'
 		logbackVersion = '1.2.3'
 	}

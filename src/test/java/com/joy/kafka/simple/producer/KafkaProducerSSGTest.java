@@ -52,11 +52,11 @@ public class KafkaProducerSSGTest {
 	}
 
 	private void testSSG_01() {
-		producer = new KafkaProducer<>(getKafkaProperties("192.168.20.201:9092,192.168.20.202:9092,192.168.20.203:9092"));
+		producer = new KafkaProducer<>(getKafkaProperties("192.168.10.57:9092,192.168.10.58:9092,192.168.10.59:9092"));
 
-		String topic = "SSG-TRACKING-TEST-IN-TOPIC";
+		String topic = "SSG-TRK-BASE-IN-TOPIC";
 		int bulkSize = 20_000_000;
-		bulkSize = 7000;
+		bulkSize = 100;
 		String message = "";
 		Random roundRandom = new Random();
 		int checkCnt = 1;
@@ -74,7 +74,7 @@ public class KafkaProducerSSGTest {
 			}
 			//logger.info("# message : {} ", message);
 			
-			producer.send(new ProducerRecord<>(topic, message));
+			producer.send(new ProducerRecord<>(topic, null, message));
 			
 //			if (i % 100 == 0) {
 //				try {

@@ -22,96 +22,97 @@ public class MonitorHandlerTest {
 
 	public static ConsumerMonitorHandler consumerMonitor = null;
 	public static TopicMonitorHandler topicMonitor = null;;
-	
+
 	public static void main(String[] args) {
 		String brokers = "192.168.10.82:9092,192.168.10.83:9092,192.168.10.84:9092";
-		brokers = "192.168.10.82:9092";
+		brokers = "192.168.20.201:9092";
 		//brokers = "192.168.10.87:9092,192.168.10.80:9092";
-		
+
 		consumerMonitor = new ConsumerMonitorHandler("localhost", brokers);
 		topicMonitor = new TopicMonitorHandler("localhost", brokers);
-		
+
 		MonitorHandlerTest test = new MonitorHandlerTest();
 		//test.testGetDeployList();
-		
+
 		//test.testGetConsumerListOffsetsByDeploy();
-		
+
 		//test.testGetTopicList();
-		
+
 		//test.testGetConsumerList();
-		
-		//test.testGetConsumerOffset();
+
+		test.testGetConsumerOffset();
 
 		//test.testGetPartitionInfo();
-		
-		test.testGetConsumerOffsetList();
-		
+
+		//test.testGetConsumerOffsetList();
+
 		//test.testGetOffsetListByTopic();
 	}
 
 	public void testGetDeployList() {
 		List<ConsumerGroupVO> deploySet = consumerMonitor.getDeployList();
-		for(ConsumerGroupVO consumerGroupVO : deploySet) {
+		for (ConsumerGroupVO consumerGroupVO : deploySet) {
 			System.out.println(consumerGroupVO.getDeployName());
 		}
 	}
-	
+
 	public void testGetConsumerListOffsetsByDeploy() {
 		String deploy = "TABLEUSERDATA"; // HCS_TEST , TABLEUSERDATA
-		
-		MonitorResponseVO vo = new MonitorResponseVO(ViewType.Deploy, consumerMonitor.getConsumerListOffsetsByDeploy(deploy));
+
+		MonitorResponseVO vo = new MonitorResponseVO(ViewType.Deploy,
+				consumerMonitor.getConsumerListOffsetsByDeploy(deploy));
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByConsumerOffsetList(vo.getResults()));
 	}
-	
+
 	public void testGetTopicList() {
 		Set<String> topicSet = topicMonitor.getTopicList();
-		
+
 		ViewColumnType[] showColumn = { ViewColumnType.TOPIC };
 		System.out.print(ViewHandler.showList(showColumn, new ArrayList<String>(topicSet)));
 	}
-	
+
 	public List<String> testGetConsumerList() {
 		List<String> list = consumerMonitor.getConsumerList();
 
 		ViewColumnType[] showColumn = { ViewColumnType.GROUP };
 		System.out.print(ViewHandler.showList(showColumn, list));
-		
+
 		return list;
 	}
-	
+
 	public void testGetConsumerOffsetList() {
 		MonitorResponseVO vo = new MonitorResponseVO(ViewType.Consumer, consumerMonitor.getConsumerListOffsets());
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByConsumerOffsetList(vo.getResults()));
 	}
-	
-	private ConsumerGroupVO testGetConsumerOffset() {
-		String groupID = "groupID-IGNITE_TEST-DE1559267912-ENT6787-MEMORYGRID";
-		
-		ConsumerGroupVO consumerGroup = consumerMonitor.getConsumerOffsets(groupID);
 
+	private ConsumerGroupVO testGetConsumerOffset() {
+		String groupID = "groupID-SSG_TRK_REFINE-DE1594369820-ENT7933-ROUTER";
+
+		ConsumerGroupVO consumerGroup = consumerMonitor.getConsumerOffsets(groupID);
+		//ConsumerGroupVO consumerGroup = consumerMonitor.getConsumerOffsets(groupID, true, false);
+		
 		if (consumerGroup == null) {
 			logger.debug("groupID : {} does NOT RUNNING State", groupID);
+		} else {
+			System.out.print(ViewHandler.showByConsumerOffset(consumerGroup));
 		}
-
-		System.out.print(ViewHandler.showByConsumerOffset(consumerGroup));
-		
 		return consumerGroup;
 	}
 
 	public void testGetOffsetListByTopic() {
 		//String groupID = "groupID-IGNITE_TEST-DE1559267912-ENT6787-MEMORYGRID";
 		//logger.debug("> topicName : {}", monitor.getTopicNamebyGroupID(groupID));
-		
+
 		MonitorResponseVO vo = new MonitorResponseVO(ViewType.Topic, topicMonitor.getTopicOffsets());
 		System.out.println(vo.toPrettyJson());
 		System.out.println(ViewHandler.showByTopicOffsetList(vo.getResults()));
 	}
-	
+
 	@Deprecated
 	private void testGetPartitionInfo() {
-		
+
 		String topic = "IGNITE_TEST-ENT8243-SP-OUT01-TOPIC";
 		Map<Integer, PartitionInfo> map = null;//monitor.getPartitionInfoMap(topic);
 

@@ -3,21 +3,21 @@ package com.joy.kafka.monitor.factory;
 import java.util.Properties;
 
 import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import kafka.admin.AdminClient;
 
 public class KafkaAdminClientFactory {
 	private static final Logger logger = LoggerFactory.getLogger(KafkaAdminClientFactory.class);
 
 	private static AdminClient adminClient = null;
 
-	public static AdminClient getAdminClient(String brokers) {
+	public static KafkaAdminClient getAdminClient(String brokers) {
 		if (adminClient == null) {
 			createAdminClient(brokers);
 		}
-		return adminClient;
+		return (KafkaAdminClient) adminClient;
 	}
 
 	private static void createAdminClient(String brokers) {
